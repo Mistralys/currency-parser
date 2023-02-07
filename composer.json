@@ -1,0 +1,33 @@
+{
+  "name": "mistralys/currency-parser",
+  "description": "PHP library that can detect prices written in text or markup, and normalise their formatting according to country-specific rules.",
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Sebastian Mordziol",
+      "email": "s.mordziol@mistralys.eu"
+    }
+  ],
+  "autoload": {
+    "classmap": [
+      "src"
+    ]
+  },
+  "autoload-dev": {
+    "classmap": [
+      "tests/TestClasses"
+      ]
+  },
+  "require": {
+    "mistralys/application-utils": ">=2.2.7",
+    "mistralys/application-localization": ">=1.4.1",
+    "php": ">=7.4"
+  },
+  "require-dev": {
+    "roave/security-advisories": "dev-latest",
+    "phpstan/phpstan": ">=1.9.2",
+    "phpunit/phpunit": ">=9.5.26"
+  }
+}
