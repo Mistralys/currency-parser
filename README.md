@@ -8,6 +8,28 @@ their formatting according to country-specific rules.
 - PHP 7.4+
 - [Composer](https://getcomposer.org)
 
+## Examples of recognized formats
+
+Primarily intended to parse prices written by humans, the parser is quite
+tolerant and will recognize any of these notations (and more) - either as
+standalone text or scattered in a larger document.
+
+- `$1000`
+- `$1,000.00` _With thousands separators_ 
+- `$ 1 , 000 . 00` _Free-spacing, including newlines_
+- `$1.000,00` _Separator style agnostic_
+- `$1.000.00` _Yes, really*_
+- `1000.2` _1 to 2 decimal places_
+- `1000 EUR` _Currency symbols or names_
+- `EUR 1000` _Symbol placement agnostic_
+- `-$ 1000` _Minus before symbol_
+- `$ -1000` _Minus after symbol_
+- `50,- €` _German short style decimals_
+- `1 000,00 € TTC` _French style with VAT_
+
+> * Based on the assumption that prices always have
+> 1-2 decimal places.
+
 ## Usage
 
 ### Detecting prices
