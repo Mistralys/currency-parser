@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Mistralys\CurrencyParserTests\TestSuites\Parser;
 
+use Mistralys\CurrencyParser\Currencies;
 use Mistralys\CurrencyParser\PriceParser;
 use Mistralys\CurrencyParserTests\TestClasses\CurrencyParserTestCase;
 
@@ -24,7 +25,7 @@ final class DetectPriceTests extends CurrencyParserTestCase
         $this->createTestParser()->findPrices('Subject');
     }
 
-    public function test_parse() : void
+    public function test_parseTestString() : void
     {
         //$this->enableDebug();
 
@@ -33,12 +34,26 @@ final class DetectPriceTests extends CurrencyParserTestCase
             ->expectCurrency('EUR')
             ->findPrices($this->testString);
 
-        $this->assertCount(5, $result);
-        $this->assertSame(50.00, $result[0]->getAsFloat());
-        $this->assertSame(1000.00, $result[1]->getAsFloat());
-        $this->assertSame(42.12, $result[2]->getAsFloat());
-        $this->assertSame(15.00, $result[3]->getAsFloat());
-        $this->assertSame(500.00, $result[4]->getAsFloat(), $result[4]->getMatchedString());
+        $expected = array(
+            50.00,
+            -33.00,
+            1000.00,
+            42.12,
+            15.00,
+            500.00,
+            9.00
+        );
+
+        $this->assertCount(7, $result);
+
+        foreach ($result as $idx => $match)
+        {
+            $this->assertSame(
+                $expected[$idx],
+                $match->getAsFloat(),
+                $match->getMatchedString()
+            );
+        }
     }
 
     public function test_limit() : void
@@ -76,14 +91,16 @@ final class DetectPriceTests extends CurrencyParserTestCase
         $this->assertSame('HT', $price->getVAT());
     }
 
-    public function test_multiplePrices() : void
+    public function test_multiplePricesWithName() : void
     {
         $subject = <<<EOT
 Canadian dollars: CAD1,000
 U.S. dollars: USD1,000
 EOT;
 
-        $prices = PriceParser::create()
+        //$this->enableDebug();
+
+        $prices = $this->createTestParser()
             ->expectCurrency('USD')
             ->expectCurrency('CAD')
             ->findPrices($subject);
@@ -91,6 +108,132 @@ EOT;
         $this->assertCount(2, $prices);
         $this->assertSame('CAD', $prices[0]->getCurrency()->getName());
         $this->assertSame('USD', $prices[1]->getCurrency()->getName());
+    }
+
+    /**
+     * The parser must select USD as default for dollar prices
+     * when using the symbol, even if other currencies have been
+     * added to the expected pool.
+     *
+     * This is handled by the property {@see PriceParser::$symbolDefaults},
+     * which is passed on to {@see Currencies::autoDetect()}.
+     */
+    public function test_multiplePricesWithSymbol() : void
+    {
+        $subject = <<<EOT
+Canadian dollars: $1,000
+U.S. dollars: $1,000
+EOT;
+
+        //$this->enableDebug();
+
+        $prices = $this->createTestParser()
+            ->expectCurrency('CAD')
+            ->expectCurrency('USD')
+            ->findPrices($subject);
+
+        $this->assertCount(2, $prices);
+        $this->assertSame('USD', $prices[0]->getCurrency()->getName());
+    }
+
+    public function test_multiplePricesUsingDefaultCurrency() : void
+    {
+        $subject = <<<EOT
+Canadian dollars: $1,000
+U.S. dollars: $1,000
+EOT;
+
+        //$this->enableDebug();
+
+        $prices = $this->createTestParser()
+            ->expectCurrency('CAD')
+            ->expectCurrency('USD')
+            ->setSymbolDefault('$', 'CAD')
+            ->findPrices($subject);
+
+        $this->assertCount(2, $prices);
+        $this->assertSame('CAD', $prices[0]->getCurrency()->getName());
+    }
+
+    public function test_parseExampleString() : void
+    {
+        //$this->enableDebug();
+
+        $result = $this
+            ->createTestParser()
+            ->expectAnyCurrency()
+            ->findPrices($this->examplesString);
+
+        $expected = array(
+            1 => array(
+                'currency' => 'USD',
+                'float' => 1000.00
+            ),
+            2 => array(
+                'currency' => 'USD',
+                'float' => 1000.00
+            ),
+            3 => array(
+                'currency' => 'USD',
+                'float' => 1000.00
+            ),
+            4 => array(
+                'currency' => 'USD',
+                'float' => 1000.00
+            ),
+            5 => array(
+                'currency' => 'USD',
+                'float' => 1000.00
+            ),
+            6 => array(
+                'currency' => 'USD',
+                'float' => 1000.20
+            ),
+            7 => array(
+                'currency' => 'EUR',
+                'float' => 1000.00
+            ),
+            8 => array(
+                'currency' => 'EUR',
+                'float' => 1000.00
+            ),
+            9 => array(
+                'currency' => 'USD',
+                'float' => -1000.00
+            ),
+            10 => array(
+                'currency' => 'USD',
+                'float' => -1000.00
+            ),
+            11 => array(
+                'currency' => 'EUR',
+                'float' => 50.00
+            ),
+            12 => array(
+                'currency' => 'EUR',
+                'float' => 1000.00
+            )
+        );
+
+        $this->assertCount(count($expected), $result);
+
+        foreach ($result as $idx => $match)
+        {
+            $test = $expected[$idx+1];
+            $label = 'Match [#'.($idx+1).']: '.$match->getMatchedString();
+
+            $this->assertSame(
+                $test['float'],
+                $match->getAsFloat(),
+                $label
+            );
+
+            $this->assertSame(
+                $test['currency'],
+                $match->getCurrency()->getName(),
+                $label
+            );
+        }
     }
 
     // endregion
@@ -101,11 +244,29 @@ EOT;
 450 
 1,45 
 50 €
+-€33
 1000,00 EUR 
 42.12€ 
 15,-EUR
 EUR 500 TTC
+€9
 EOT;
+
+    private string $examplesString = <<<'EOT'
+- `$1000`
+- `$1,000.00` _With thousands separators_ 
+- `$ 1 , 000 . 00` _Free-spacing, including newlines_
+- `$1.000,00` _Separator style agnostic_
+- `$1.000.00` _Yes, really*_
+- `$1000.2` _1 to 2 decimal places_
+- `1000 EUR` _Currency symbols or names_
+- `EUR 1000` _Symbol placement agnostic_
+- `-$ 1000` _Minus before symbol_
+- `$ -1000` _Minus after symbol_
+- `50,- €` _German short style decimals_
+- `1 000,00 € TTC` _French style with VAT_
+EOT;
+
 
     private bool $debug = false;
 
