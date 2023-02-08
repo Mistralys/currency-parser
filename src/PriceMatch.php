@@ -51,7 +51,17 @@ class PriceMatch
             $decimals = 0;
         }
 
-        return (float)($number.'.'.$decimals);
+        $multiplier = 1;
+        if($this->isNegative()) {
+            $multiplier = -1;
+        }
+
+        return ((float)($number.'.'.$decimals)) * $multiplier;
+    }
+
+    public function isNegative() : bool
+    {
+        return $this->getSign() !== '';
     }
 
     public function getSign(): string
