@@ -32,6 +32,11 @@ class PriceMatch
         return $this->currency;
     }
 
+    public function getCurrencyName() : string
+    {
+        return $this->getCurrency()->getName();
+    }
+
     public function getNumber() : int
     {
         return $this->number;
