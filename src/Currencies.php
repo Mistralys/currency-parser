@@ -18,6 +18,7 @@ class Currencies
     public const ERROR_CANNOT_GET_BY_NAME = 127701;
     public const ERROR_CANNOT_REGISTER_FORMATTER = 127702;
     public const ERROR_CANNOT_ACCESS_CURRENCIES_FOLDER = 127703;
+    public const ERROR_UNKNOWN_CURRENCY_SYMBOL = 12704;
 
     /**
      * @var array<string,BaseCurrency>
@@ -159,12 +160,15 @@ class Currencies
     }
 
     /**
-     * @param string $searchTerm
-     * @param BaseCurrency[] $currencies
+     * @param string $searchTerm Can be a currency symbol, name or HTML entity.
+     * @param BaseCurrency[] $currencies List of currencies in which to search.
+     * @param array<string,string> $symbolDefaults List of symbol > currency name pairs to se the default currency to use for currencies that share the same symbol.
      * @return BaseCurrency|NULL
      */
-    public function autoDetect(string $searchTerm, array $currencies) : ?BaseCurrency
+    public function autoDetect(string $searchTerm, array $currencies, array $symbolDefaults) : ?BaseCurrency
     {
+        $symbolMatches = array();
+
         foreach($currencies as $currency)
         {
             if($currency->getName() === strtoupper($searchTerm))
@@ -177,12 +181,77 @@ class Currencies
                 return $currency;
             }
 
+            // There can be several currencies with the same symbol,
+            // so we build a list of all matching currencies.
             if($currency->getSymbol() === $searchTerm)
             {
-                return $currency;
+                $symbolMatches[] = $currency->getName();
             }
         }
 
+        // Currencies matched the symbol: Now we either use the currency
+        // that is set as the default for that symbol, or the first of the
+        // currencies we found.
+        if(!empty($symbolMatches))
+        {
+            return $this->getByName($symbolDefaults[$searchTerm] ?? array_shift($symbolMatches));
+        }
+
         return null;
+    }
+
+    /**
+     * @param string $symbol The currency symbol, e.g. "$"
+     * @return bool
+     */
+    public function symbolExists(string $symbol) : bool
+    {
+        return in_array($symbol, $this->getKnownSymbols(), true);
+    }
+
+    /**
+     * @param string $symbol The currency symbol, e.g. "$"
+     * @return $this
+     *
+     * @throws CurrencyParserException
+     * @see self::ERROR_UNKNOWN_CURRENCY_SYMBOL
+     */
+    public function requireSymbolExists(string $symbol) : self
+    {
+        if(!$this->symbolExists($symbol))
+        {
+            throw new CurrencyParserException(
+                'Currency symbol does not exist.',
+                sprintf(
+                    'The symbol [%s] is not known. Known symbols are: [%s].',
+                    $symbol,
+                    implode(', ', $this->getKnownSymbols())
+                ),
+                self::ERROR_UNKNOWN_CURRENCY_SYMBOL
+            );
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getKnownSymbols() : array
+    {
+        $result = array();
+        $currencies = $this->getAll();
+
+        foreach($currencies as $currency)
+        {
+            $symbol = $currency->getSymbol();
+
+            if(!in_array($symbol, $result, true))
+            {
+                $result[] = $symbol;
+            }
+        }
+
+        return $result;
     }
 }
