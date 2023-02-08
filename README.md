@@ -8,6 +8,17 @@ their formatting according to country-specific rules.
 - PHP 7.4+
 - [Composer](https://getcomposer.org)
 
+## Installation
+
+Use Composer to add the library to your project:
+
+```
+composer require mistralys/currency-parser
+```
+
+Alternatively, clone it locally using the GIT command line (or [GitHub Desktop](https://desktop.github.com/)),
+or manually [download a release](https://github.com/Mistralys/currency-parser/releases).
+
 ## Examples of recognized formats
 
 Primarily intended to parse prices written by humans, the parser is quite
