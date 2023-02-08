@@ -10,6 +10,7 @@ use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 class PriceParser
 {
     public const ERROR_NO_EXPECTED_CURRENCIES_SET = 128001;
+    public const ERROR_DEFAULT_CURRENCY_SYMBOL_MISMATCH = 128002;
 
     private Currencies $currencies;
     private bool $debug = false;
@@ -54,6 +55,71 @@ class PriceParser
     }
 
     /**
+     * @param BaseCurrency|string ...$currencies
+     * @return $this
+     */
+    public function expectCurrencies(...$currencies) : self
+    {
+        foreach($currencies as $currency)
+        {
+            $this->expectCurrency($currency);
+        }
+
+        return $this;
+    }
+
+    public function expectAnyCurrency() : self
+    {
+        return $this->expectCurrencies(...Currencies::getInstance()->getAll());
+    }
+
+    /**
+     * @var array<string,string>
+     */
+    private array $symbolDefaults = array(
+        '$' => 'USD'
+    );
+
+    /**
+     * In cases where several countries use the same currency symbol
+     * ($ used for USD and CAD for example), this can be used to
+     * specify which currency to choose for prices written with that
+     * symbol.
+     *
+     * @param string $symbol The currency symbol, e.g. "$"
+     * @param BaseCurrency|string $currency The currency instance (or name) to use as default for the symbol (must use the same symbol).
+     * @return $this
+     * @throws CurrencyParserException
+     */
+    public function setSymbolDefault(string $symbol, $currency) : self
+    {
+        $collection = Currencies::getInstance();
+
+        if(!$currency instanceof BaseCurrency)
+        {
+            $currency = $collection->requireByName($currency);
+        }
+
+        $collection->requireSymbolExists($symbol);
+
+        if($currency->getSymbol() === $symbol) {
+            $this->symbolDefaults[$symbol] = $currency->getName();
+            return $this;
+        }
+
+        throw new CurrencyParserException(
+            'Currency symbol mismatch.',
+            sprintf(
+                'Cannot set the currency [%s] as default for symbol [%s], its symbol is a different one ([%s]).',
+                $currency->getName(),
+                $symbol,
+                $currency->getSymbol()
+            ),
+            self::ERROR_DEFAULT_CURRENCY_SYMBOL_MISMATCH
+        );
+    }
+
+    /**
      * @return void
      * @throws CurrencyParserException
      * @see self::ERROR_NO_EXPECTED_CURRENCIES_SET
@@ -72,6 +138,18 @@ class PriceParser
             ),
             self::ERROR_NO_EXPECTED_CURRENCIES_SET
         );
+    }
+
+    protected function getExpectedCurrencyNames() : array
+    {
+        $result = array();
+
+        foreach($this->expected as $currency)
+        {
+            $result[] = $currency->getName();
+        }
+
+        return $result;
     }
 
     /**
@@ -97,6 +175,14 @@ class PriceParser
             PREG_PATTERN_ORDER
         );
 
+        $this->debug(
+            'Working with [%s] expected currencies: [%s].',
+            count($this->expected),
+            implode(', ', $this->getExpectedCurrencyNames())
+        );
+
+        $this->debug('Using regex: %s', $regex);
+
         $prices = array();
         $amount = 0;
 
@@ -116,18 +202,37 @@ class PriceParser
                 break;
             }
 
+            // Determine the offset to access the information from
+            // in the matches array, depending on which switch case
+            // was matched.
+            if(!empty($result[1][$idx]))
+            {
+                $offset = 0;
+                $this->debug('Detected symbol on the front');
+            }
+            else if(!empty($result[31][$idx]))
+            {
+                $offset = 22;
+                $this->debug('Detected symbol at the end.');
+            }
+            else
+            {
+                $offset = 11;
+                $this->debug('Detected symbol after minus sign.');
+            }
+
             // Extract the information from the capturing
             // groups in the regex matches.
-            $symbol1 = $result[1][$idx];
-            $space1 = $result[2][$idx];
-            $sign = trim($result[3][$idx]);
-            $space2 = $result[4][$idx];
-            $symbol2 = $result[5][$idx];
-            $space3 = $result[6][$idx];
-            $number = $this->parseNumber($result[7][$idx], $result[8][$idx]);
-            $symbol3 = $result[9][$idx];
-            $space4 = $result[10][$idx];
-            $vat = $result[11][$idx];
+            $symbol1 = $result[$offset+1][$idx];
+            $space1 = $result[$offset+2][$idx];
+            $sign = trim($result[$offset+3][$idx]);
+            $space2 = $result[$offset+4][$idx];
+            $symbol2 = $result[$offset+5][$idx];
+            $space3 = $result[$offset+6][$idx];
+            $number = $this->parseNumber($result[$offset+7][$idx], $result[$offset+8][$idx]);
+            $symbol3 = $result[$offset+9][$idx];
+            $space4 = $result[$offset+10][$idx];
+            $vat = $result[$offset+11][$idx];
 
             // Determine the currency symbol to use, depending
             // on which capturing group was filled in the regex
@@ -143,10 +248,29 @@ class PriceParser
             if(empty($currencySymbol))
             {
                 $this->debug('Match [#%s] | No currency symbol detected, skipping.', $idx);
+                if($this->debug) {
+                    echo print_r(array(
+                        '1. symbol #1' => $symbol1,
+                        '2. space #1' => ConvertHelper::hidden2visible($space1),
+                        '3. sign' => $sign,
+                        '4. space #2' => ConvertHelper::hidden2visible($space2),
+                        '5. symbol #2' => $symbol2,
+                        '6. space #3' => ConvertHelper::hidden2visible($space3),
+                        '7. price' => $number['number'],
+                        '8. decimals' => $number['decimals'],
+                        '9. symbol #3' => $symbol3,
+                        '10. space #4' => ConvertHelper::hidden2visible($space4),
+                        '11. vat' => $vat,
+                    ), true);
+                }
                 continue;
             }
 
-            $currencyInstance = $this->currencies->autoDetect($currencySymbol, $this->expected);
+            $currencyInstance = $this->currencies->autoDetect(
+                $currencySymbol,
+                $this->expected,
+                $this->symbolDefaults
+            );
 
             // None of the currencies we were expecting match this
             // currency symbol: In theory, this cannot happen because
@@ -198,7 +322,6 @@ class PriceParser
                     '10. space #4' => ConvertHelper::hidden2visible($space4),
                     '11. vat' => $vat,
 
-                    '_regex' => $regex,
                     '_match' => $match,
                     '_currency' => $currencySymbol,
                     '_spaceFront' => ConvertHelper::hidden2visible($spaceFront),
@@ -318,12 +441,12 @@ class PriceParser
      */
     private function compileRegex() : string
     {
-        $symbols = $this->compileSymbolRegex();
-
-        return
-            '/'.
+        // The core regular expression has three places where
+        // the currency symbol can be placed. These places are
+        // marked with placeholders here, e.g. {SYMBOLS_FRONT}.
+        $regexBase =
             // 1. Currency symbol on front, e.g. "$40"
-            '('.$symbols.')?'.
+            '{SYMBOLS_FRONT}'.
             // 2 . Prefix space #1
             '(\s*)'.
             // 3. Minus sign, if present
@@ -331,7 +454,7 @@ class PriceParser
             // 4. Prefix space #2
             '(\s*)'.
             // 5. Currency symbol after minus sign, e.g. "-$40"
-            '('.$symbols.')?'.
+            '{SYMBOLS_AFTER_MINUS}'.
             // 6. Prefix space #3
             '(\s*)'.
             // 7. Number with spaces, commas or dots
@@ -346,12 +469,63 @@ class PriceParser
             ')?'.
             '\s*'.
             // 9. Currency symbol at the end, e.g. "40$"
-            '('.$symbols.')?'.
+            '{SYMBOLS_END}'.
             // 10. Suffix space
             '(\s*)'.
             // 11. French VAT, if present, e.g. "40€ TTC"
-            '(TTC|HT)?'.
-            '/iu';
+            '(TTC|HT)?';
+
+        $optional = '(\s*)';
+        $mandatory = '('.$this->compileSymbolRegex().')';
+
+        // Initially, all three symbol locations used optional
+        // capturing groups, e.g. "($|€|USD|EUR)?". However, as
+        // most of the regex consists of optional groups, this
+        // led to many false positives.
+        //
+        // To solve this problem, the regex is duplicated into
+        // three switch cases, each having the currency symbol
+        // as mandatory in one of the three possible spots.
+        //
+        // The optional capturing group used instead of the
+        // currency symbols is a neutral whitespace group to
+        // guarantee that the group indexes stay the same for
+        // all three variants.
+        $list = array(
+            'Symbol at the front' => array(
+                '{SYMBOLS_FRONT}' => $mandatory,
+                '{SYMBOLS_AFTER_MINUS}' => $optional,
+                '{SYMBOLS_END}' => $optional
+            ),
+            'Symbol after minus sign' => array(
+                '{SYMBOLS_FRONT}' => $optional,
+                '{SYMBOLS_AFTER_MINUS}' => $mandatory,
+                '{SYMBOLS_END}' => $optional
+            ),
+            'Symbol at the end' => array(
+                '{SYMBOLS_FRONT}' => $optional,
+                '{SYMBOLS_AFTER_MINUS}' => $optional,
+                '{SYMBOLS_END}' => $mandatory
+            )
+        );
+
+        // Create the actual regex by replacing the currency symbol
+        // places with the intended capturing groups.
+        $switches = array();
+        foreach($list as $label => $entry)
+        {
+            $switches[] =
+                '(?# '.$label.')'.
+                str_replace(
+                    array_keys($entry),
+                    array_values($entry),
+                    $regexBase
+                );
+        }
+
+        // The outer group to handle the switch case is a
+        // non-capturing group, with the (?: notation.
+        return '/(?:'.implode('|', $switches).')/iu';
     }
 
     /**
@@ -369,7 +543,7 @@ class PriceParser
 
         foreach($this->expected as $currency)
         {
-            $symbol = $currency->getSymbol();
+            $symbol = preg_quote($currency->getSymbol(), '/');
 
             if(!in_array($symbol, $symbols, true))
             {
