@@ -32,7 +32,7 @@ standalone text or scattered in a larger document.
 
 ## Usage
 
-### Detecting prices
+### Detecting specific currencies
 
 To be able to detect prices, the parser needs to know what kind of currencies
 to expect in the document. In the following example, we only use Euro prices. 
@@ -40,14 +40,32 @@ to expect in the document. In the following example, we only use Euro prices.
 ```php
 use Mistralys\CurrencyParser\PriceParser;
 
-$subject = 'Some text or HTML markup with a price of 50,42 €.';
+$subject = 'Price of a basic subscription: 50,42 €.';
 
 $prices = PriceParser::create()
     ->expectCurrency('EUR')
     ->findPrices($subject);
 ```
 
-### Detecting currencies with the same symbol
+### Detecting all currencies
+
+For performance reasons, it is best to limit the list currencies to search for
+in a document. If this cannot be determined reliably, you may use all of them:
+
+```php
+use Mistralys\CurrencyParser\PriceParser;
+
+$subject = '(document with prices here)';
+
+$prices = PriceParser::create()
+    ->expectAnyCurrency()
+    ->findPrices($subject);
+```
+
+> Also see the next section on how to handle currencies that share the same
+> currency symbol.
+
+### Multiple possible currencies per symbol 
 
 It is possible to add multiple currencies to the parser. However, it will not 
 be able to tell them apart if they share the same symbol. Consider the following
@@ -65,11 +83,14 @@ $prices = PriceParser::create()
     ->expectCurrency('USD')
     ->expectCurrency('CAD')
     ->findPrices($subject);
+    
+echo $prices[0]->getCurrencyName(); // USD
+echo $prices[1]->getCurrencyName(); // USD
 ```
 
 The parser will not be able to tell which of those two prices are the CAD and 
-USD ones. A solution is to use currency names instead of symbols if possible.
-This will work without problems:
+USD ones. By default, the **parser will use `USD` in case of conflict with the
+`$` symbol**. Using currency names does not have this issue:
 
 ```php
 use Mistralys\CurrencyParser\PriceParser;
@@ -83,7 +104,39 @@ $prices = PriceParser::create()
     ->expectCurrency('USD')
     ->expectCurrency('CAD')
     ->findPrices($subject);
+
+echo $prices[0]->getCurrencyName(); // CAD
+echo $prices[1]->getCurrencyName(); // USD
 ```
+
+### Setting default currencies per symbol
+
+The parser has built-in defaults for currency symbol conflicts, like `USD` for `$`.
+However, this can be adjusted if the target currency used in the document is known. 
+Consider the following example:
+
+```php
+use Mistralys\CurrencyParser\PriceParser;
+
+$subject = <<<EOT
+Starting price: $35
+Black Friday rebate: $9.99
+Your price: $25.01
+EOT;
+
+$prices = PriceParser::create()
+    ->expectCurrency('CAD')
+    ->setSymbolDefault('$', 'CAD')
+    ->findPrices($subject);
+
+echo $prices[0]->getCurrencyName(); // CAD
+echo $prices[1]->getCurrencyName(); // CAD
+echo $prices[3]->getCurrencyName(); // CAD
+```
+
+> If the document uses multiple currencies with the same symbol, this will not make 
+> it possible to distinguish between them. Only using currency names can solve such 
+> cases.
 
 ## Philosophy
 
