@@ -19,7 +19,7 @@ standalone text or scattered in a larger document.
 - `$ 1 , 000 . 00` _Free-spacing, including newlines_
 - `$1.000,00` _Separator style agnostic_
 - `$1.000.00` _Yes, really*_
-- `1000.2` _1 to 2 decimal places_
+- `$1000.2` _1 to 2 decimal places_
 - `1000 EUR` _Currency symbols or names_
 - `EUR 1000` _Symbol placement agnostic_
 - `-$ 1000` _Minus before symbol_
