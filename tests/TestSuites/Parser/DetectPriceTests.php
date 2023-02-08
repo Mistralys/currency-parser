@@ -136,33 +136,29 @@ EOT;
         $this->assertSame('USD', $prices[0]->getCurrency()->getName());
     }
 
-    public function test_multiplePricesUsingDefaultCurrency() : void
+    public function test_parseSupportedFormatsExample() : void
     {
-        $subject = <<<EOT
-Canadian dollars: $1,000
-U.S. dollars: $1,000
+        //$this->enableDebug();
+
+        $string = <<<'EOT'
+- `$1000`
+- `$1,000.00` _With thousands separators_ 
+- `$ 1 , 000 . 00` _Free-spacing, including newlines_
+- `$1.000,00` _Separator style agnostic_
+- `$1.000.00` _Yes, really*_
+- `$1000.2` _1 to 2 decimal places_
+- `1000 EUR` _Currency symbols or names_
+- `EUR 1000` _Symbol placement agnostic_
+- `-$ 1000` _Minus before symbol_
+- `$ -1000` _Minus after symbol_
+- `50,- €` _German short style decimals_
+- `1 000,00 € TTC` _French style with VAT_
 EOT;
-
-        //$this->enableDebug();
-
-        $prices = $this->createTestParser()
-            ->expectCurrency('CAD')
-            ->expectCurrency('USD')
-            ->setSymbolDefault('$', 'CAD')
-            ->findPrices($subject);
-
-        $this->assertCount(2, $prices);
-        $this->assertSame('CAD', $prices[0]->getCurrency()->getName());
-    }
-
-    public function test_parseExampleString() : void
-    {
-        //$this->enableDebug();
 
         $result = $this
             ->createTestParser()
             ->expectAnyCurrency()
-            ->findPrices($this->examplesString);
+            ->findPrices($string);
 
         $expected = array(
             1 => array(
@@ -236,6 +232,26 @@ EOT;
         }
     }
 
+    public function test_parseDefaultSymbolExample() : void
+    {
+        $subject = <<<EOT
+Starting price: $35
+Black Friday rebate: $9.99
+Your price: $25.01
+EOT;
+
+        $prices = PriceParser::create()
+            ->expectCurrency('CAD')
+            ->setSymbolDefault('$', 'CAD')
+            ->findPrices($subject);
+
+        $this->assertCount(3, $prices);
+
+        $this->assertSame($prices[0]->getCurrencyName(), 'CAD');
+        $this->assertSame($prices[1]->getCurrencyName(), 'CAD');
+        $this->assertSame($prices[2]->getCurrencyName(), 'CAD');
+    }
+
     // endregion
 
     // region: Support methods
@@ -251,22 +267,6 @@ EOT;
 EUR 500 TTC
 €9
 EOT;
-
-    private string $examplesString = <<<'EOT'
-- `$1000`
-- `$1,000.00` _With thousands separators_ 
-- `$ 1 , 000 . 00` _Free-spacing, including newlines_
-- `$1.000,00` _Separator style agnostic_
-- `$1.000.00` _Yes, really*_
-- `$1000.2` _1 to 2 decimal places_
-- `1000 EUR` _Currency symbols or names_
-- `EUR 1000` _Symbol placement agnostic_
-- `-$ 1000` _Minus before symbol_
-- `$ -1000` _Minus after symbol_
-- `50,- €` _German short style decimals_
-- `1 000,00 € TTC` _French style with VAT_
-EOT;
-
 
     private bool $debug = false;
 
