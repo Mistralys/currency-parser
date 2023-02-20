@@ -14,10 +14,12 @@ class PriceMatch
     private string $spaceFront;
     private string $spaceEnd;
     private string $matchedString;
+    private string $currencySymbol;
 
-    public function __construct(string $matchedString, BaseCurrency $currency, int $number, string $decimals, string $sign, string $spaceFront='', string $spaceEnd='', string $vat='')
+    public function __construct(string $matchedString, $currencySymbol, BaseCurrency $currency, int $number, string $decimals, string $sign, string $spaceFront='', string $spaceEnd='', string $vat='')
     {
         $this->matchedString = $matchedString;
+        $this->currencySymbol = $currencySymbol;
         $this->currency = $currency;
         $this->number = $number;
         $this->decimals = $decimals;
@@ -37,6 +39,11 @@ class PriceMatch
         return $this->getCurrency()->getName();
     }
 
+    public function getMatchedCurrencySymbol() : string
+    {
+        return $this->currencySymbol;
+    }
+
     public function getNumber() : int
     {
         return $this->number;
@@ -45,6 +52,11 @@ class PriceMatch
     public function getDecimals(): string
     {
         return $this->decimals;
+    }
+
+    public function hasDecimals() : bool
+    {
+        return !empty($this->decimals);
     }
 
     public function getAsFloat() : float
@@ -79,6 +91,11 @@ class PriceMatch
         return $this->vat;
     }
 
+     public function hasVAT() : bool
+     {
+         return $this->vat !== '';
+     }
+
     public function getSpaceFront(): string
     {
         return $this->spaceFront;
@@ -92,10 +109,5 @@ class PriceMatch
     public function getMatchedString(): string
     {
         return $this->matchedString;
-    }
-
-    public function format(string $decimalSeparator, string $thousandsSeparator, string $arithmeticSeparator) : PriceFormatter
-    {
-        return new PriceFormatter($this, $decimalSeparator, $thousandsSeparator, $arithmeticSeparator);
     }
 }
