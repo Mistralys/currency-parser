@@ -155,11 +155,11 @@ class PriceParser
     /**
      * @param string $subject
      * @param int $limit Maximum amount of prices to return
-     * @return PriceMatch[]
+     * @return PriceMatches
      * @throws CurrencyParserException
      * @see self::ERROR_NO_EXPECTED_CURRENCIES_SET
      */
-    public function findPrices(string $subject, int $limit=0) : array
+    public function findPrices(string $subject, int $limit=0) : PriceMatches
     {
         $this->requireCurrencies();
 
@@ -332,6 +332,7 @@ class PriceParser
 
             $prices[] = new PriceMatch(
                 $match,
+                $currencySymbol,
                 $currencyInstance,
                 $number['number'],
                 $number['decimals'],
@@ -344,7 +345,7 @@ class PriceParser
             $amount++;
         }
 
-        return $prices;
+        return new PriceMatches($subject, $prices);
     }
 
     /**
@@ -354,13 +355,7 @@ class PriceParser
      */
     public function findFirstPrice(string $subject) : ?PriceMatch
     {
-        $matches = $this->findPrices($subject, 1);
-
-        if(!empty($matches)) {
-            return array_shift($matches);
-        }
-
-        return null;
+        return $this->findPrices($subject, 1)->getFirst();
     }
 
     /**
