@@ -40,7 +40,7 @@ class MXN_MX extends BaseCurrencyFormat
 
     public function getSymbolPosition(): string
     {
-        return PriceFormatter::SYMBOL_POSITION_FRONT;
+        return PriceFormatter::SYMBOL_POSITION_BEFORE_MINUS;
     }
 
     public function getPreferredSymbolType(): string
