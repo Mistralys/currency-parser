@@ -72,7 +72,8 @@ final class DetectPriceTests extends CurrencyParserTestCase
         $price = $this
             ->createTestParser()
             ->expectCurrency('EUR')
-            ->findFirstPrice('42 EUR TTC');
+            ->findPrices('42 EUR TTC')
+            ->getFirst();
 
         $this->assertNotNull($price);
         $this->assertSame('TTC', $price->getVAT());
@@ -85,7 +86,8 @@ final class DetectPriceTests extends CurrencyParserTestCase
         $price = $this
             ->createTestParser()
             ->expectCurrency('EUR')
-            ->findFirstPrice('42 eur ht');
+            ->findPrices('42 eur ht')
+            ->getFirst();
 
         $this->assertNotNull($price);
         $this->assertSame('HT', $price->getVAT());
@@ -267,26 +269,6 @@ EOT;
 EUR 500 TTC
 €9
 EOT;
-
-    private bool $debug = false;
-
-    private function enableDebug() : void
-    {
-        $this->debug = true;
-    }
-
-    private function createTestParser(): PriceParser
-    {
-        return PriceParser::create()
-            ->setDebugEnabled($this->debug);
-    }
-
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-
-        $this->debug = false;
-    }
 
     // endregion
 }
