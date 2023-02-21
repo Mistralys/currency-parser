@@ -16,7 +16,7 @@ abstract class BaseCurrencyLocale
     public const SYMBOL_TYPE_SYMBOL = 'symbol';
     public const SYMBOL_TYPE_NAME = 'name';
 
-    private BaseCurrency $currency;
+    protected BaseCurrency $currency;
     private string $iso;
     private string $id;
     private Localization_Country $country;
