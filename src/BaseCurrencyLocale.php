@@ -22,6 +22,15 @@ abstract class BaseCurrencyLocale
     private Localization_Country $country;
 
     /**
+     * Country ISO mappings for special cases.
+     * @var array<string,string>
+     */
+    private array $isoAliases = array(
+        'gb' => 'uk',
+        'eu' => 'de'
+    );
+
+    /**
      * @param BaseCurrency $currency
      *
      * @throws CurrencyParserException
@@ -39,8 +48,8 @@ abstract class BaseCurrencyLocale
         {
             $iso = $this->getCountryISO();
 
-            if($iso === 'gb') {
-                $iso = 'uk';
+            if(isset($this->isoAliases[$iso])) {
+                $iso = $this->isoAliases[$iso];
             }
 
             $this->country = Localization::createCountry($iso);
