@@ -110,4 +110,9 @@ class PriceMatch
     {
         return $this->matchedString;
     }
+
+    public function formatForLocale($nameOrInstance) : string
+    {
+        return PriceFormatter::createLocale($nameOrInstance)->formatPrice($this);
+    }
 }
