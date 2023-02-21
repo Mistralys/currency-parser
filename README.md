@@ -304,16 +304,19 @@ echo $prices[3]->getCurrencyName(); // CAD
 There is an excellent money library for PHP, [Money](https://github.com/moneyphp/money). 
 This library does not attempt to reproduce the same functionality - it was developed
 for an application in particular, which requires the formatting to be fully 
-whitespace-agnostic in regard to the document being filtered. The methodology in 
-general is focused on the filtering aspect, whereas Money is a full-fledged financial
-calculation tool. 
+whitespace-aware. The methodology in general is focused on the filtering aspect, 
+whereas Money is a full-fledged financial calculation tool. 
+
+The two libraries can be used together: Prices have a method to get their value in
+money integer style.
+
+```php
+\Mistralys\CurrencyParser\parsePrice('$50')->getAsMoney();
+```
 
 > NOTE: The built-int locale-based formatting may vary slightly from a library like 
 > Money. This is due to the formatting rules defined in the application for which the
 > library was developed.
-
-Early on, it was decided not to use Money as a dependency. It would have increased the
-complexity, and forced the use of Money. 
 
 ### Contributing
 
