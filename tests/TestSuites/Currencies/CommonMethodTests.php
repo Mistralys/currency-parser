@@ -19,7 +19,7 @@ final class CommonMethodTests extends CurrencyParserTestCase
 
     public function test_getFormatByID() : void
     {
-        $this->assertInstanceOf(EUR_FR::class, Currencies::getInstance()->getFormatterByID('EUR_FR'));
-        $this->assertInstanceOf(EUR_FR::class, Currencies::getInstance()->getFormatterByID('eur_fr'));
+        $this->assertInstanceOf(EUR_FR::class, Currencies::getInstance()->getLocaleByID('EUR_FR'));
+        $this->assertInstanceOf(EUR_FR::class, Currencies::getInstance()->getLocaleByID('eur_fr'));
     }
 }

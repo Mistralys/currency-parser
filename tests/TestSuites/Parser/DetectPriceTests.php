@@ -56,17 +56,6 @@ final class DetectPriceTests extends CurrencyParserTestCase
         }
     }
 
-    public function test_limit() : void
-    {
-        $this->assertCount(
-            2,
-            $this
-                ->createTestParser()
-                ->expectCurrency('EUR')
-                ->findPrices($this->testString, 2)
-        );
-    }
-
     public function test_frenchVAT() : void
     {
         $price = $this

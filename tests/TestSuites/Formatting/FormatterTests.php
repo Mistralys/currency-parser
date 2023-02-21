@@ -21,10 +21,10 @@ final class FormatterTests extends CurrencyParserTestCase
 
         $this->assertSame(
             'EUR&#160;-1 000.00',
-            PriceFormatter::create('.', ' ')
+            PriceFormatter::createCustom('.', ' ')
                 ->setSymbolPosition(PriceFormatter::SYMBOL_POSITION_BEFORE_MINUS)
                 ->setSymbolMode(PriceFormatter::SYMBOL_MODE_NAME)
-                ->setSymbolSpaceEnabled()
+                ->setSymbolSpaceStyle(PriceFormatter::SYMBOL_POSITION_BEFORE_MINUS, PriceFormatter::SPACE_AFTER)
                 ->formatPrice($price)
         );
     }
