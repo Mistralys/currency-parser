@@ -311,7 +311,8 @@ The two libraries can be used together: Prices have a method to get their value 
 money integer style.
 
 ```php
-\Mistralys\CurrencyParser\parsePrice('$50')->getAsMoney();
+// (int)5000
+$money = \Mistralys\CurrencyParser\parsePrice('$50')->getAsMoney();
 ```
 
 > NOTE: The built-int locale-based formatting may vary slightly from a library like 
