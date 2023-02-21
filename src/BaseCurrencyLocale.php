@@ -107,4 +107,43 @@ abstract class BaseCurrencyLocale
     {
         return $this->country;
     }
+
+    /**
+     * @return PriceFormatter
+     * @throws CurrencyParserException
+     */
+    public function createFormatter() : PriceFormatter
+    {
+        return PriceFormatter::createLocale($this);
+    }
+
+    public function formatPriceString(string $price) : string
+    {
+        return $this->formatPrice(
+            PriceParser::create()
+                ->expectCurrency($this->getCurrency())
+                ->findPrices($price)
+                ->requireFirst()
+        );
+    }
+
+    /**
+     * @param PriceMatch $price
+     * @return string
+     * @throws CurrencyParserException
+     */
+    public function formatPrice(PriceMatch $price) : string
+    {
+        return $this->createFormatter()->formatPrice($price);
+    }
+
+    public function createFilter() : PriceFilter
+    {
+        return PriceFilter::createForLocales($this);
+    }
+
+    public function filterString(string $subject) : string
+    {
+        return $this->createFilter()->filterString($subject);
+    }
 }
