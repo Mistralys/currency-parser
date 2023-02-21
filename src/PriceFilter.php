@@ -45,7 +45,7 @@ class PriceFilter
      * instance is created automatically for the related currencies,
      * and formatters set for each.
      *
-     * @param string|BaseCurrency ...$locales Locale names (e.g. "EUR_FR", "USD") or locale instances.
+     * @param string|BaseCurrencyLocale ...$locales Locale names (e.g. "EUR_FR", "USD") or locale instances.
      * @return PriceFilter
      * @throws CurrencyParserException
      */
