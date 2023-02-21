@@ -8,6 +8,7 @@ use AppLocalize\Localization;
 use AppLocalize\Localization_Country;
 use AppLocalize\Localization_Exception;
 use AppUtils\FileHelper\FileInfo;
+use Mistralys\CurrencyParser\Formatter\CustomFormatter;
 use Mistralys\CurrencyParser\Formatter\PriceFormatterException;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
@@ -106,7 +107,7 @@ class PriceFilter
 
         return $this->setFormatter(
             $locale->getCurrency(),
-            PriceFormatter::createForLocale($locale)
+            PriceFormatter::createLocale($locale)
         );
     }
 
