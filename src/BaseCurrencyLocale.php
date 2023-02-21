@@ -7,11 +7,9 @@ namespace Mistralys\CurrencyParser;
 use AppLocalize\Localization;
 use AppLocalize\Localization_Country;
 use AppLocalize\Localization_Exception;
-use AppUtils\ClassHelper;
-use Mistralys\CurrencyParser\Currencies\EUR\EUR_DE;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
-abstract class BaseCurrencyFormat
+abstract class BaseCurrencyLocale
 {
     public const ERROR_CANNOT_CREATE_COUNTRY = 127901;
 
@@ -50,7 +48,7 @@ abstract class BaseCurrencyFormat
         catch (Localization_Exception $e)
         {
             throw new CurrencyParserException(
-                'Cannot create country for currency formatter.',
+                'Cannot create country for currency locale.',
                 sprintf(
                     'Could not get country for ISO [%s].',
                     $this->getCountryISO()
@@ -68,7 +66,7 @@ abstract class BaseCurrencyFormat
     }
 
     /**
-     * @return string The format ID, e.g. "EUR_DE"
+     * @return string The locale ID, e.g. "EUR_DE"
      */
     public function getID() : string
     {
@@ -86,6 +84,7 @@ abstract class BaseCurrencyFormat
     abstract public function getSymbolSeparator() : string;
     abstract public function getSymbolPosition() : string;
     abstract public function getPreferredSymbolType() : string;
+    abstract public function getSymbolSpaceStyles() : array;
 
     /**
      * @return string The lowercase country ISO code, e.g. "de"
