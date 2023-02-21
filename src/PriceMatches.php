@@ -7,6 +7,7 @@ namespace Mistralys\CurrencyParser;
 use ArrayAccess;
 use Countable;
 use Iterator;
+use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
 /**
  * Container for a price parser result: Holds the original
@@ -22,6 +23,7 @@ use Iterator;
  */
 class PriceMatches implements ArrayAccess, Countable, Iterator
 {
+    public const ERROR_NO_FIRST_PRICE_AVAILABLE = 130001;
     private string $subject;
 
     /**
@@ -69,9 +71,26 @@ class PriceMatches implements ArrayAccess, Countable, Iterator
         return null;
     }
 
-    public function createFormatter(string $decimalSeparator, string $thousandSeparator, string $arithmeticSeparator) : PriceFormatter
+    /**
+     * Fetches the first price in the collection. Assumes that one exists,
+     * and throws an exception otherwise.
+     *
+     * @return PriceMatch
+     * @throws CurrencyParserException {@see self::ERROR_NO_FIRST_PRICE_AVAILABLE}
+     */
+    public function requireFirst() : PriceMatch
     {
-        return new PriceFormatter($decimalSeparator, $thousandSeparator, $arithmeticSeparator);
+        $first = $this->getFirst();
+
+        if($first !== null) {
+            return $first;
+        }
+
+        throw new CurrencyParserException(
+            'No price available.',
+            'No prices found in the collection.',
+            self::ERROR_NO_FIRST_PRICE_AVAILABLE
+        );
     }
 
     // region: Array interfaces
