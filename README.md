@@ -71,7 +71,7 @@ echo parsePrice('$1000.00')->format();
 
 Output:
 ```
-$,1000.00
+$1,000.00
 ```
 
 ### Format all prices in a text or markup
