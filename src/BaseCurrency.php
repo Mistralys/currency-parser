@@ -11,7 +11,6 @@ use AppUtils\FileHelper_Exception;
 use Mistralys\CurrencyParser\Currencies\EUR;
 use Mistralys\CurrencyParser\Currencies\EUR\EUR_DE;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
-use testsuites\FileHelperTests\PathInfoTest;
 
 abstract class BaseCurrency
 {
