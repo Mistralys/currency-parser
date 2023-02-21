@@ -245,7 +245,7 @@ EOT;
 
     public function test_parseSinglePrice() : void
     {
-        $price = PriceParser::parsePrice('$500');
+        $price = PriceParser::tryParsePrice('$500');
 
         $this->assertNotNull($price);
         $this->assertSame(500.00, $price->getAsFloat());

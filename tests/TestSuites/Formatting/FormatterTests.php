@@ -78,7 +78,7 @@ final class FormatterTests extends CurrencyParserTestCase
                 ->expectCurrency('EUR')
                 ->findPrices('-1,000.00 EUR TTC')
                 ->requireFirst()
-                ->formatForLocale('EUR_FR')
+                ->format('EUR_FR')
         );
     }
 }
