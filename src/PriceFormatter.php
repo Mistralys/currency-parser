@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Mistralys\CurrencyParser;
 
+use Mistralys\CurrencyParser\Formatter\PriceFormatterException;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
 class PriceFormatter
