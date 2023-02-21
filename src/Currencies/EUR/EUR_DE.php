@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Mistralys\CurrencyParser\Currencies\EUR;
 
-use Mistralys\CurrencyParser\EUR_EU;
 use Mistralys\CurrencyParser\Currencies\EUR;
 
 /**

@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Mistralys\CurrencyParser;
+namespace Mistralys\CurrencyParser\Currencies\EUR;
 
+use Mistralys\CurrencyParser\BaseCurrencyLocale;
 use Mistralys\CurrencyParser\Currencies\EUR;
+use Mistralys\CurrencyParser\PriceFormatter;
 
 /**
  * @property EUR $currency

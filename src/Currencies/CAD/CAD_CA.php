@@ -40,11 +40,20 @@ class CAD_CA extends BaseCurrencyLocale
 
     public function getSymbolPosition(): string
     {
-        return PriceFormatter::SYMBOL_POSITION_BEFORE_MINUS;
+        return PriceFormatter::SYMBOL_POSITION_BEFORE_MINUS; // $ -50
     }
 
     public function getPreferredSymbolType(): string
     {
         return self::SYMBOL_TYPE_SYMBOL;
+    }
+
+    public function getSymbolSpaceStyles(): array
+    {
+        return array(
+            PriceFormatter::SYMBOL_POSITION_END => PriceFormatter::SPACE_BEFORE, // 50 $
+            PriceFormatter::SYMBOL_POSITION_BEFORE_MINUS => PriceFormatter::SPACE_AFTER, // $ -50
+            PriceFormatter::SYMBOL_POSITION_AFTER_MINUS => PriceFormatter::SPACE_AFTER // -$ 50
+        );
     }
 }
