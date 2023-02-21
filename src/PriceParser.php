@@ -221,7 +221,7 @@ class PriceParser
         preg_match(
             sprintf(
                 //        1     2     3    4       5        6   7      8
-                '/(-?)(%1$s)?(-?)(%1$s)?([0-9,. ]+)(-?)(%1$s)?(TTC|HT)?/',
+                '/(-?)(%1$s)?(-?)(%1$s)?([0-9,. ]+)(-?)(%1$s)?(TTC|HT)?/i',
                 $this->compileSymbolRegex()
             ),
             $price,
@@ -267,14 +267,14 @@ class PriceParser
 
         return new PriceMatch(
             $matchedText,
-            $currencySymbol,
+            strtoupper($currencySymbol),
             $currencyInstance,
             $number['number'],
             $number['decimals'],
             $sign,
             $spaceFront,
             $spaceEnd,
-            $vat
+            strtoupper($vat)
         );
     }
 
