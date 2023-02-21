@@ -11,6 +11,9 @@
     }
   ],
   "autoload": {
+    "files": [
+      "src/GlobalFunctions.php"
+    ],
     "classmap": [
       "src"
     ]
