@@ -9,7 +9,7 @@ class PriceFormatter
     public const ERROR_INVALID_SYMBOL_MODE = 129701;
     public const ERROR_INVALID_SYMBOL_POSITION = 129702;
 
-    public const SPACE_PLACEHOLDER = '_space_';
+    public const PLACEHOLDER_SPACE = '_space_';
     public const SYMBOL_POSITION_BEFORE_MINUS = 'before-minus';
     public const SYMBOL_POSITION_AFTER_MINUS = 'after-minus';
     public const SYMBOL_POSITION_END = 'end';
@@ -26,29 +26,91 @@ class PriceFormatter
         self::SYMBOL_MODE_PRESERVE,
         self::SYMBOL_MODE_SYMBOL
     );
+    public const SPACE_BOTH = 'both';
+    public const SPACE_AFTER = 'after';
+    public const SPACE_BEFORE = 'before';
 
     private string $nonBreakingSpace = '&#160;';
     private PriceMatch $workPrice;
     private string $decimalSeparator;
     private string $thousandsSeparator;
-    private string $arithmeticSeparator;
-    private bool $symbolSpaceEnabled = false;
+    private string $arithmeticSeparator = '';
+    private array $symbolSpaceStyles = array(
+        self::SYMBOL_POSITION_BEFORE_MINUS => null,
+        self::SYMBOL_POSITION_AFTER_MINUS => null,
+        self::SYMBOL_POSITION_END => null
+    );
     private string $symbolPosition = self::SYMBOL_POSITION_AFTER_MINUS;
     private string $symbolMode = self::SYMBOL_MODE_PRESERVE;
 
-    private function __construct(string $decimalSeparator, string $thousandsSeparator, string $arithmeticSeparator)
+    private function __construct(string $decimalSeparator, string $thousandsSeparator)
     {
         $this->decimalSeparator = $decimalSeparator;
         $this->thousandsSeparator = $thousandsSeparator;
-        $this->arithmeticSeparator = $arithmeticSeparator;
     }
 
-    public static function create(string $decimalSeparator, string $thousandsSeparator, string $arithmeticSeparator='') : PriceFormatter
+    public static function createCustom(string $decimalSeparator, string $thousandsSeparator) : PriceFormatter
     {
-        return new PriceFormatter($decimalSeparator, $thousandsSeparator, $arithmeticSeparator);
+        return new PriceFormatter($decimalSeparator, $thousandsSeparator);
+    }
+
+    /**
+     * Creates a formatter for a specific currency locale:
+     * It is automatically configured for that country's
+     * typical price formatting.
+     *
+     * NOTE: It can be customised further, to use the locale's
+     * formatting only as a template to start with.
+     *
+     * @param string|BaseCurrencyLocale $localeNameOrInstance Locale name as given to {@see Currencies::getLocaleByID()} or a locale instance.
+     * @return PriceFormatter
+     * @throws PriceFormatterException
+     */
+    public static function createForLocale($localeNameOrInstance) : PriceFormatter
+    {
+        if($localeNameOrInstance instanceof BaseCurrencyLocale)
+        {
+            $locale = $localeNameOrInstance;
+        }
+        else
+        {
+            $locale = Currencies::getInstance()->getLocaleByID($localeNameOrInstance);
+        }
+
+        return self::createCustom(
+            $locale->getDecimalSeparator(),
+            $locale->getThousandsSeparator(),
+            $locale->getArithmeticSeparator()
+        )
+            ->setSymbolPosition($locale->getSymbolPosition())
+            ->setSymbolSpaceStyles($locale->getSymbolSpaceStyles());
     }
 
     // region: A - Utility methods
+
+    public function setDecimalSeparator(string $separator) : self
+    {
+        $this->decimalSeparator = $separator;
+        return $this;
+    }
+
+    public function setArithmeticSeparator(string $arithmeticSeparator): self
+    {
+        $this->arithmeticSeparator = $arithmeticSeparator;
+        return $this;
+    }
+
+    public function setThousandsSeparator(string $thousandsSeparator): self
+    {
+        $this->thousandsSeparator = $thousandsSeparator;
+        return $this;
+    }
+
+    public function setNonBreakingSpace(string $nonBreakingSpace): self
+    {
+        $this->nonBreakingSpace = $nonBreakingSpace;
+        return $this;
+    }
 
     /**
      * @param string $position
@@ -73,9 +135,31 @@ class PriceFormatter
         );
     }
 
-    public function setSymbolSpaceEnabled(bool $enabled=true) : self
+    /**
+     * @param array<string,string> $styles Symbol position => space style pairs.
+     * @return $this
+     */
+    public function setSymbolSpaceStyles(array $styles) : self
     {
-        $this->symbolSpaceEnabled = $enabled;
+        foreach($styles as $position => $style)
+        {
+            $this->setSymbolSpaceStyle($position, $style);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Sets the space style before and after the currency symbol,
+     * for the target symbol position in the price.
+     *
+     * @param string $position The symbol position, e.g. {@see self::SYMBOL_POSITION_BEFORE_MINUS}.
+     * @param string|NULL $style The space style to use, e.g. {@see self::SPACE_AFTER}, or NULL to use no spaces.
+     * @return $this
+     */
+    public function setSymbolSpaceStyle(string $position, ?string $style) : self
+    {
+        $this->symbolSpaceStyles[$position] = $style;
         return $this;
     }
 
@@ -107,7 +191,7 @@ class PriceFormatter
         $this->workPrice = $price;
 
         $result = str_replace(
-            self::SPACE_PLACEHOLDER,
+            self::PLACEHOLDER_SPACE,
             $this->nonBreakingSpace,
             $this->render()
         );
@@ -148,20 +232,31 @@ class PriceFormatter
         return $this->workPrice->getMatchedCurrencySymbol();
     }
 
-    private function resolveSymbolSpace() : string
+    private function resolveSymbolWithSpacing() : string
     {
-        if($this->symbolSpaceEnabled) {
-            return self::SPACE_PLACEHOLDER;
+        $style = $this->symbolSpaceStyles[$this->symbolPosition];
+        $symbol = $this->resolveSymbol();
+
+        if($style === self::SPACE_AFTER) {
+            return $symbol.self::PLACEHOLDER_SPACE;
         }
 
-        return '';
+        if($style === self::SPACE_BEFORE) {
+            return self::PLACEHOLDER_SPACE.$symbol;
+        }
+
+        if($style === self::SPACE_BOTH) {
+            return self::PLACEHOLDER_SPACE.$symbol.self::PLACEHOLDER_SPACE;
+        }
+
+        return $symbol;
     }
 
     private function renderSymbolBeforeMinus() : string
     {
         if($this->symbolPosition === self::SYMBOL_POSITION_BEFORE_MINUS)
         {
-            return $this->resolveSymbol() . $this->resolveSymbolSpace();
+            return $this->resolveSymbolWithSpacing();
         }
 
         return '';
@@ -171,7 +266,7 @@ class PriceFormatter
     {
         if($this->symbolPosition === self::SYMBOL_POSITION_AFTER_MINUS)
         {
-            return $this->resolveSymbolSpace() . $this->resolveSymbol();
+            return $this->resolveSymbolWithSpacing();
         }
 
         return '';
@@ -181,7 +276,7 @@ class PriceFormatter
     {
         if($this->symbolPosition === self::SYMBOL_POSITION_END)
         {
-            return $this->resolveSymbolSpace() . $this->resolveSymbol();
+            return $this->resolveSymbolWithSpacing();
         }
 
         return '';
@@ -191,7 +286,7 @@ class PriceFormatter
     {
         if($this->workPrice->hasVAT())
         {
-            return self::SPACE_PLACEHOLDER .$this->workPrice->getVAT();
+            return self::PLACEHOLDER_SPACE .$this->workPrice->getVAT();
         }
 
         return '';
