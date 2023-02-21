@@ -6,30 +6,24 @@ namespace Mistralys\CurrencyParser;
 
 use Mistralys\CurrencyParser\Formatter\CustomFormatter;
 use Mistralys\CurrencyParser\Formatter\LocaleFormatter;
-use Mistralys\CurrencyParser\Formatter\PriceFormatterException;
+use Mistralys\CurrencyParser\Interfaces\SymbolModesInterface;
+use Mistralys\CurrencyParser\Interfaces\SymbolModesTrait;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
-abstract class PriceFormatter
+abstract class PriceFormatter implements SymbolModesInterface
 {
-    public const ERROR_INVALID_SYMBOL_MODE = 129701;
-    public const ERROR_INVALID_SYMBOL_POSITION = 129702;
+    use SymbolModesTrait;
+
+    public const ERROR_INVALID_SYMBOL_POSITION = 129701;
 
     public const PLACEHOLDER_SPACE = '_space_';
     public const SYMBOL_POSITION_BEFORE_MINUS = 'before-minus';
     public const SYMBOL_POSITION_AFTER_MINUS = 'after-minus';
     public const SYMBOL_POSITION_END = 'end';
-    public const SYMBOL_MODE_PRESERVE = 'preserve';
-    public const SYMBOL_MODE_NAME = 'name';
-    public const SYMBOL_MODE_SYMBOL = 'symbol';
     public const SYMBOL_POSITIONS = array(
         self::SYMBOL_POSITION_END,
         self::SYMBOL_POSITION_AFTER_MINUS,
         self::SYMBOL_POSITION_BEFORE_MINUS
-    );
-    public const SYMBOL_MODES = array(
-        self::SYMBOL_MODE_NAME,
-        self::SYMBOL_MODE_PRESERVE,
-        self::SYMBOL_MODE_SYMBOL
     );
     public const SPACE_BOTH = 'both';
     public const SPACE_AFTER = 'after';
@@ -37,7 +31,6 @@ abstract class PriceFormatter
 
     protected string $nonBreakingSpace = '&#160;';
     private PriceMatch $workPrice;
-    protected string $symbolMode = self::SYMBOL_MODE_PRESERVE;
 
     // region: A - Instance creation
 
@@ -84,72 +77,6 @@ abstract class PriceFormatter
         return $this;
     }
 
-    /**
-     * @param string $mode
-     * @return $this
-     * @throws PriceFormatterException {@see self::ERROR_INVALID_SYMBOL_MODE}
-     */
-    public function setSymbolMode(string $mode) : self
-    {
-        if(in_array($mode, self::SYMBOL_MODES)) {
-            $this->symbolMode = $mode;
-            return $this;
-        }
-
-        throw new PriceFormatterException(
-            'Invalid price formatter symbol mode.',
-            sprintf(
-                'The mode [%s] is unknown. Valid modes are: [%s].',
-                $mode,
-                implode(', ', self::SYMBOL_MODES)
-            ),
-            self::ERROR_INVALID_SYMBOL_MODE
-        );
-    }
-
-    /**
-     * The currency symbol style will be preserved for all prices,
-     * so that they can use USD or $ interchangeably for example.
-     * In effect, this will leave all symbols as-is.
-     *
-     * @return $this
-     * @throws PriceFormatterException
-     */
-    public function setSymbolModePreserve() : self
-    {
-        return $this->setSymbolMode(self::SYMBOL_MODE_PRESERVE);
-    }
-
-    /**
-     * All currency symbols will be replaced by the actual currency
-     * symbol, even if they used the named variant in the source
-     * string.
-     *
-     * @return $this
-     * @throws PriceFormatterException
-     */
-    public function setSymbolModeSymbol() : self
-    {
-        return $this->setSymbolMode(self::SYMBOL_MODE_SYMBOL);
-    }
-
-    /**
-     * All currency symbols will be replaced by the currency name,
-     * even if they used the symbol in the source string.
-     *
-     * @return $this
-     * @throws PriceFormatterException
-     */
-    public function setSymbolModeName() : self
-    {
-        return $this->setSymbolMode(self::SYMBOL_MODE_NAME);
-    }
-
-    public function getSymbolMode() : string
-    {
-        return $this->symbolMode;
-    }
-
     public function formatPrice(PriceMatch $price) : string
     {
         $this->workPrice = $price;
@@ -188,17 +115,42 @@ abstract class PriceFormatter
         return str_replace(' ', self::PLACEHOLDER_SPACE, $subject);
     }
 
+    abstract public function getLocale() : ?BaseCurrencyLocale;
+
     private function resolveSymbol() : string
     {
-        if($this->symbolMode === self::SYMBOL_MODE_NAME) {
+        if($this->symbolMode === SymbolModesInterface::SYMBOL_MODE_NAME) {
             return $this->workPrice->getCurrencyName();
         }
 
-        if($this->symbolMode === self::SYMBOL_MODE_SYMBOL) {
+        if($this->symbolMode === SymbolModesInterface::SYMBOL_MODE_SYMBOL) {
             return $this->workPrice->getCurrency()->getSymbol();
         }
 
+        if($this->symbolMode === SymbolModesInterface::SYMBOL_MODE_PREFERRED) {
+            $symbol = $this->resolvePreferredSymbol();
+            if($symbol !== null) {
+                return $symbol;
+            }
+        }
+
         return $this->workPrice->getMatchedCurrencySymbol();
+    }
+
+    private function resolvePreferredSymbol() : ?string
+    {
+        $locale = $this->getLocale();
+        if($locale === null) {
+            return null;
+        }
+
+        $type = $locale->getPreferredSymbolType();
+
+        if($type === BaseCurrencyLocale::SYMBOL_TYPE_NAME) {
+            return $this->workPrice->getCurrencyName();
+        }
+
+        return $this->workPrice->getCurrency()->getSymbol();
     }
 
     private function resolveSymbolWithSpacing() : string

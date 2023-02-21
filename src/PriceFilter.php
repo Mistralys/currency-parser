@@ -8,12 +8,15 @@ use AppLocalize\Localization;
 use AppLocalize\Localization_Country;
 use AppLocalize\Localization_Exception;
 use AppUtils\FileHelper\FileInfo;
-use Mistralys\CurrencyParser\Formatter\CustomFormatter;
 use Mistralys\CurrencyParser\Formatter\PriceFormatterException;
+use Mistralys\CurrencyParser\Interfaces\SymbolModesInterface;
+use Mistralys\CurrencyParser\Interfaces\SymbolModesTrait;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
-class PriceFilter
+class PriceFilter implements SymbolModesInterface
 {
+    use SymbolModesTrait;
+
     /**
      * @var PriceFormatter[]
      */
@@ -171,6 +174,11 @@ class PriceFilter
 
     // endregion
 
+
+    // region: Utility methods
+
+    // endregion
+
     // region: B - Filtering methods
 
     public function filterFile(FileInfo $file) : string
@@ -207,7 +215,7 @@ class PriceFilter
     /**
      * @param PriceMatch $price
      * @return PriceFormatter
-     * @throws PriceFilterException
+     * @throws CurrencyParserException
      * @throws PriceFormatterException
      */
     private function resolveFormatter(PriceMatch $price) : PriceFormatter
@@ -215,12 +223,15 @@ class PriceFilter
         $currency = $price->getCurrency();
         $formatter = $this->getFormatter($currency);
 
-        if($formatter !== null) {
-            return $formatter;
+        if($formatter === null) {
+            $formatter = PriceFormatter::createLocale($currency->getDefaultLocale());
+            $this->setFormatter($currency, $formatter);
         }
 
-        $formatter = PriceFormatter::createForLocale($currency->getDefaultLocale());
-        $this->setFormatter($currency, $formatter);
+        // Pass on the symbol mode, if one has been set
+        if(isset($this->symbolMode)) {
+            $formatter->setSymbolMode($this->getSymbolMode());
+        }
 
         return $formatter;
     }
