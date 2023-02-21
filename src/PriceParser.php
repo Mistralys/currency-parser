@@ -37,13 +37,13 @@ class PriceParser
     }
 
     /**
-     * @param string|BaseCurrency $currencyNameOrInstance
+     * @param string|BaseCurrency $nameOrInstance
      * @return $this
      * @throws CurrencyParserException
      */
-    public function expectCurrency($currencyNameOrInstance) : self
+    public function expectCurrency($nameOrInstance) : self
     {
-        $currency = $this->currencies->requireCurrency($currencyNameOrInstance);
+        $currency = $this->currencies->getCurrency($nameOrInstance);
 
         $this->expected[$currency->getName()] = $currency;
 
@@ -86,18 +86,15 @@ class PriceParser
      * symbol.
      *
      * @param string $symbol The currency symbol, e.g. "$"
-     * @param BaseCurrency|string $currency The currency instance (or name) to use as default for the symbol (must use the same symbol).
+     * @param BaseCurrency|string $nameOrInstance The currency instance (or name) to use as default for the symbol (must use the same symbol).
      * @return $this
      * @throws CurrencyParserException
      */
-    public function setSymbolDefault(string $symbol, $currency) : self
+    public function setSymbolDefault(string $symbol, $nameOrInstance) : self
     {
         $collection = Currencies::getInstance();
 
-        if(!$currency instanceof BaseCurrency)
-        {
-            $currency = $collection->requireByName($currency);
-        }
+        $currency = $collection->getCurrency($nameOrInstance);
 
         $collection->requireSymbolExists($symbol);
 
