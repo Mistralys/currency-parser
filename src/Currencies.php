@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Mistralys\CurrencyParser;
 
+use AppLocalize\Localization_Country;
 use AppUtils\ClassHelper;
 use AppUtils\ClassHelper\BaseClassHelperException;
 use AppUtils\ClassHelper\ClassNotExistsException;
@@ -21,6 +22,7 @@ class Currencies
     public const ERROR_CANNOT_ACCESS_CURRENCIES_FOLDER = 127703;
     public const ERROR_UNKNOWN_CURRENCY_SYMBOL = 12704;
     public const ERROR_UNKNOWN_CURRENCY = 12705;
+    public const ERROR_UNKNOWN_CURRENCY_LOCALE = 12706;
 
     /**
      * @var array<string,BaseCurrency>
@@ -110,28 +112,14 @@ class Currencies
 
     /**
      * @param string $name Case insensitive currency name, e.g. "EUR", "eur"
-     * @return BaseCurrency|null
-     */
-    public function getByName(string $name) : ?BaseCurrency
-    {
-        return $this->nameIndex[strtoupper($name)] ?? null;
-    }
-
-    /**
-     * Retrieves a currency by name, symbol or HTML entity.
-     * Throws an exception if not found.
-     *
-     * @param string $name
      * @return BaseCurrency
-     *
-     * @throws CurrencyParserException {@see Currencies::ERROR_CANNOT_GET_BY_NAME}
+     * @throws CurrencyParserException
      */
-    public function requireByName(string $name) : BaseCurrency
+    public function getByName(string $name) : BaseCurrency
     {
-        $currency = $this->getByName($name);
-
-        if($currency !== null) {
-            return $currency;
+        $name = strtoupper($name);
+        if(isset($this->nameIndex[$name])) {
+            return $this->nameIndex[$name];
         }
 
         throw new CurrencyParserException(
@@ -144,24 +132,39 @@ class Currencies
         );
     }
 
+    public function nameExists(string $name) : bool
+    {
+        $name = strtoupper($name);
+        return isset($this->nameIndex[$name]);
+    }
+
     /**
      * @param string $id Locale ID, e.g. "EUR_DE". If only the currency is specified (e.g. "USD"), the default locale will be used.
-     * @return BaseCurrencyLocale|null
+     * @return BaseCurrencyLocale
+     * @throws CurrencyParserException
      */
-    public function getLocaleByID(string $id) : ?BaseCurrencyLocale
+    public function getLocaleByID(string $id) : BaseCurrencyLocale
     {
         $parts = explode('_', $id);
-        $currency = $this->getByName($parts[0]);
 
-        if($currency === null) {
-            return null;
+        if($this->nameExists($parts[0])) {
+            $currency = $this->getByName($parts[0]);
+
+            if (isset($parts[1])) {
+                return $currency->getLocaleByISO($parts[1]);
+            }
+
+            return $currency->getDefaultLocale();
         }
 
-        if(isset($parts[1])) {
-            return $currency->getLocaleByISO($parts[1]);
-        }
-
-        return $currency->getDefaultLocale();
+        throw new CurrencyParserException(
+            'Unknown currency locale.',
+            sprintf(
+                'Cannot find any currency locale matching the provided ID [%s].',
+                $id
+            ),
+            self::ERROR_UNKNOWN_CURRENCY_LOCALE
+        );
     }
 
     /**
@@ -169,6 +172,7 @@ class Currencies
      * @param BaseCurrency[] $currencies List of currencies in which to search.
      * @param array<string,string> $symbolDefaults List of symbol > currency name pairs to se the default currency to use for currencies that share the same symbol.
      * @return BaseCurrency|NULL
+     * @throws CurrencyParserException
      */
     public function autoDetect(string $searchTerm, array $currencies, array $symbolDefaults) : ?BaseCurrency
     {
@@ -199,7 +203,11 @@ class Currencies
         // currencies we found.
         if(!empty($symbolMatches))
         {
-            return $this->getByName($symbolDefaults[$searchTerm] ?? array_shift($symbolMatches));
+            $name = $symbolDefaults[$searchTerm] ?? array_shift($symbolMatches);
+
+            if($this->nameExists($name)) {
+                return $this->getByName($name);
+            }
         }
 
         return null;
@@ -261,51 +269,44 @@ class Currencies
     }
 
     /**
-     * @param string|BaseCurrencyLocale $locale
-     * @return BaseCurrencyLocale|null
+     * @param string|BaseCurrencyLocale $nameOrInstance
+     * @return BaseCurrencyLocale
+     * @throws CurrencyParserException
      */
-    public function resolveLocale($locale) : ?BaseCurrencyLocale
+    public function getLocale($nameOrInstance) : BaseCurrencyLocale
     {
-        if($locale instanceof BaseCurrencyLocale) {
-            return $locale;
+        if($nameOrInstance instanceof BaseCurrencyLocale) {
+            return $nameOrInstance;
         }
 
-        return $this->getLocaleByID($locale);
+        return $this->getLocaleByID($nameOrInstance);
     }
 
     /**
-     * @param string|BaseCurrency $currencyNameOrInstance
-     * @return BaseCurrency|null
-     */
-    public function resolveCurrency($currencyNameOrInstance) : ?BaseCurrency
-    {
-        if($currencyNameOrInstance instanceof BaseCurrency) {
-            return $currencyNameOrInstance;
-        }
-
-        return $this->getByName($currencyNameOrInstance);
-    }
-
-    /**
-     * @param string|BaseCurrency $currencyNameOrInstance
+     * @param string|BaseCurrency $nameOrInstance
      * @return BaseCurrency
      * @throws CurrencyParserException
      */
-    public function requireCurrency($currencyNameOrInstance) : BaseCurrency
+    public function getCurrency($nameOrInstance) : BaseCurrency
     {
-        $currency = $this->resolveCurrency($currencyNameOrInstance);
-
-        if($currency !== null) {
-            return $currency;
+        if($nameOrInstance instanceof BaseCurrency) {
+            return $nameOrInstance;
         }
 
-        throw new CurrencyParserException(
-            'Unknown currency.',
-            sprintf(
-                'Cannot find any currency matching the provided [%s].',
-                parseVariable($currencyNameOrInstance)->enableType()->toString()
-            ),
-            self::ERROR_UNKNOWN_CURRENCY
-        );
+        return $this->getByName($nameOrInstance);
+    }
+
+    /**
+     * Gets the currency locale matching the specified country.
+     *
+     * @param Localization_Country $country
+     * @return BaseCurrencyLocale
+     * @throws CurrencyParserException
+     */
+    public function getLocaleByCountry(Localization_Country $country) : BaseCurrencyLocale
+    {
+        return $this
+            ->getByName($country->getCurrency()->getISO())
+            ->getLocaleByISO($country->getCode());
     }
 }
