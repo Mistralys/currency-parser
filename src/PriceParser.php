@@ -35,15 +35,44 @@ class PriceParser
      * Parses a single price string.
      *
      * @param string $price The price string to parse, e.g. "$50"
+     * @param string|BaseCurrency|NULL $currency
      * @return PriceMatch|null The price match, or NULL if it could not be detected.
      * @throws CurrencyParserException
      */
-    public static function parsePrice(string $price) : ?PriceMatch
+    public static function tryParsePrice(string $price, $currency=null) : ?PriceMatch
     {
-        return self::create()
-            ->expectAnyCurrency()
+        $parser = self::create();
+
+        if(empty($currency)) {
+            $parser->expectAnyCurrency();
+        } else {
+            $parser->expectCurrency($currency);
+        }
+
+        return $parser
             ->findPrices($price)
             ->getFirst();
+    }
+
+    /**
+     * @param string $price
+     * @param string|BaseCurrency|NULL $currency
+     * @return PriceMatch
+     * @throws CurrencyParserException
+     */
+    public static function parsePrice(string $price, $currency=null) : PriceMatch
+    {
+        $parser = self::create();
+
+        if(empty($currency)) {
+            $parser->expectAnyCurrency();
+        } else {
+            $parser->expectCurrency($currency);
+        }
+
+        return $parser
+            ->findPrices($price)
+            ->requireFirst();
     }
 
     public function setDebugEnabled(bool $enabled) : self
