@@ -27,6 +27,11 @@ class CustomFormatter extends PriceFormatter
         if($thousandsSeparator !== null) { $this->setThousandsSeparator($thousandsSeparator); }
     }
 
+    public function getLocale(): ?BaseCurrencyLocale
+    {
+        return null;
+    }
+
     /**
      * Configures the formatter for a specific currency locale.
      * This allows using the locale's settings as a template
