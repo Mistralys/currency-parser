@@ -9,7 +9,7 @@ use Mistralys\CurrencyParser\Currencies\EUR;
 /**
  * @property EUR $currency
  */
-abstract class BaseEURFormat extends BaseCurrencyFormat
+class EUR_EU extends BaseCurrencyLocale
 {
     public function __construct(EUR $currency)
     {
@@ -49,5 +49,14 @@ abstract class BaseEURFormat extends BaseCurrencyFormat
     public function getPreferredSymbolType(): string
     {
         return self::SYMBOL_TYPE_SYMBOL;
+    }
+
+    public function getSymbolSpaceStyles(): array
+    {
+        return array(
+            PriceFormatter::SYMBOL_POSITION_END => PriceFormatter::SPACE_BEFORE,
+            PriceFormatter::SYMBOL_POSITION_BEFORE_MINUS => null,
+            PriceFormatter::SYMBOL_POSITION_AFTER_MINUS => PriceFormatter::SPACE_AFTER
+        );
     }
 }
