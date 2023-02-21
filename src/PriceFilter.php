@@ -133,4 +133,10 @@ class PriceFilter
     {
         return $this->filterString($file->getContents());
     }
+
+    public function setDebugEnabled(bool $enabled=true) : self
+    {
+        $this->parser->setDebugEnabled($enabled);
+        return $this;
+    }
 }
