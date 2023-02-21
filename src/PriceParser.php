@@ -14,7 +14,8 @@ class PriceParser
 
     private Currencies $currencies;
     private bool $debug = false;
-
+    private ?string $masterRegex = null;
+    private ?string $priceRegex = null;
     /**
      * @var BaseCurrency[]
      */
@@ -45,6 +46,9 @@ class PriceParser
         $currency = $this->currencies->requireCurrency($currencyNameOrInstance);
 
         $this->expected[$currency->getName()] = $currency;
+
+        $this->resetRegexes();
+
         return $this;
     }
 
@@ -161,7 +165,7 @@ class PriceParser
     {
         $this->requireCurrencies();
 
-        $regex = $this->compileRegex();
+        $regex = $this->compileMasterRegex();
 
         if($this->debug) {
             $this->debug('Analysing text with a length of [%s] characters.', strlen($subject));
@@ -218,15 +222,7 @@ class PriceParser
         $price = str_replace(' ', '', $result[2]);
         $spaceEnd = $result[3];
 
-        preg_match(
-            sprintf(
-                //        1     2     3    4       5        6   7      8
-                '/(-?)(%1$s)?(-?)(%1$s)?([0-9,. ]+)(-?)(%1$s)?(TTC|HT)?/i',
-                $this->compileSymbolRegex()
-            ),
-            $price,
-            $result
-        );
+        preg_match($this->compilePriceRegex(), $price, $result);
 
         // To facilitate finding the filled positions in the matches
         $result = $this->nullifyEmpty($result);
@@ -235,6 +231,11 @@ class PriceParser
         $currencySymbol = $result[2] ?? $result[4] ?? $result[7] ?? '';
         $number = $this->parseNumber($result[5], $result[6]);
         $vat = $result[8] ?? '';
+
+        // Fix the price name case
+        if(ctype_alpha($currencySymbol)) {
+            $currencySymbol = strtoupper($currencySymbol);
+        }
 
         $currencyInstance = $this->currencies->autoDetect(
             $currencySymbol,
@@ -267,7 +268,7 @@ class PriceParser
 
         return new PriceMatch(
             $matchedText,
-            strtoupper($currencySymbol),
+            $currencySymbol,
             $currencyInstance,
             $number['number'],
             $number['decimals'],
@@ -278,6 +279,12 @@ class PriceParser
         );
     }
 
+    /**
+     * Replaces all whitespace values with NULL in the array.
+     *
+     * @param array<string,string> $values
+     * @return array<string,string|NULL>
+     */
     private function nullifyEmpty(array $values) : array
     {
         foreach($values as $key => $value)
@@ -356,14 +363,24 @@ class PriceParser
         );
     }
 
+    private function resetRegexes() : void
+    {
+        $this->masterRegex = null;
+        $this->priceRegex = null;
+    }
+
     /**
      * Creates the regex used by {@see Newsletter_CharFilter_PriceNotation::formatPrices()}
      * to detect prices in the HTML code.
      *
      * @return string
      */
-    private function compileRegex() : string
+    private function compileMasterRegex() : string
     {
+        if(isset($this->masterRegex)) {
+            return $this->masterRegex;
+        }
+
         // The core regular expression has three places where
         // the currency symbol can be placed. These places are
         // marked with placeholders here, e.g. {SYMBOLS_FRONT}.
@@ -448,7 +465,28 @@ class PriceParser
 
         // The outer group to handle the switch case is a
         // non-capturing group, with the (?: notation.
-        return '/(?:'.implode('|', $switches).')/iu';
+        $regex = '/(?:'.implode('|', $switches).')/iu';
+
+        $this->masterRegex = $regex;
+
+        return $regex;
+    }
+
+    private function compilePriceRegex() : string
+    {
+        if(isset($this->priceRegex)) {
+            return $this->priceRegex;
+        }
+
+        $regex = sprintf(
+             //        1     2     3    4       5        6   7      8
+            '/(-?)(%1$s)?(-?)(%1$s)?([0-9,. ]+)(-?)(%1$s)?(TTC|HT)?/i',
+            $this->compileSymbolRegex()
+        );
+
+        $this->priceRegex = $regex;
+
+        return $regex;
     }
 
     /**
