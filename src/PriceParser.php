@@ -36,27 +36,22 @@ class PriceParser
     }
 
     /**
-     * @param string|BaseCurrency $currency
+     * @param string|BaseCurrency $currencyNameOrInstance
      * @return $this
+     * @throws CurrencyParserException
      */
-    public function expectCurrency($currency) : self
+    public function expectCurrency($currencyNameOrInstance) : self
     {
-        if($currency instanceof BaseCurrency)
-        {
-            $name = $currency->getName();
-        }
-        else
-        {
-            $name = $currency;
-        }
+        $currency = $this->currencies->requireCurrency($currencyNameOrInstance);
 
-        $this->expected[$name] = $this->currencies->getByName($name);
+        $this->expected[$currency->getName()] = $currency;
         return $this;
     }
 
     /**
      * @param BaseCurrency|string ...$currencies
      * @return $this
+     * @throws CurrencyParserException
      */
     public function expectCurrencies(...$currencies) : self
     {
@@ -153,21 +148,32 @@ class PriceParser
     }
 
     /**
+     * Detects all unique price snippets in the subject string,
+     * and returns a {@see PriceMatches} instance to easily
+     * access them.
+     *
      * @param string $subject
-     * @param int $limit Maximum amount of prices to return
      * @return PriceMatches
      * @throws CurrencyParserException
      * @see self::ERROR_NO_EXPECTED_CURRENCIES_SET
      */
-    public function findPrices(string $subject, int $limit=0) : PriceMatches
+    public function findPrices(string $subject) : PriceMatches
     {
         $this->requireCurrencies();
 
-        $this->debug('Analysing text with a length of [%s] characters.', strlen($subject));
-        $this->debug('Limit is set to [%s].', $limit);
+        $regex = $this->compileRegex();
+
+        if($this->debug) {
+            $this->debug('Analysing text with a length of [%s] characters.', strlen($subject));
+            $this->debug('Using regex: %s', $regex);
+            $this->debug(
+                'Working with [%s] expected currencies: [%s].',
+                count($this->expected),
+                implode(', ', $this->getExpectedCurrencyNames())
+            );
+        }
 
         $result = array();
-        $regex = $this->compileRegex();
         preg_match_all(
             $regex,
             $subject,
@@ -175,187 +181,113 @@ class PriceParser
             PREG_PATTERN_ORDER
         );
 
-        $this->debug(
-            'Working with [%s] expected currencies: [%s].',
-            count($this->expected),
-            implode(', ', $this->getExpectedCurrencyNames())
-        );
+        $matches = array_unique($result[0]);
 
-        $this->debug('Using regex: %s', $regex);
-
-        $prices = array();
-        $amount = 0;
-
-        foreach( $result[0] as $idx => $match )
+        $result = array();
+        $matchNumber = 1;
+        foreach($matches as $matchedText)
         {
-            // Empty matches can happen because of how the regex is built,
-            // with the optional capturing groups.
-            if(trim($match) === '') {
-                $this->debug('Match [#%s] | Empty, skipping.', $idx);
+            if(empty(trim($matchedText))) {
                 continue;
             }
 
-            $this->debug('Match [#%s] | Matched text: [%s].', $idx, $match);
+            $match = $this->parseMatch($matchNumber, $matchedText);
 
-            if($limit > 0 && $amount >= $limit ) {
-                $this->debug('Match [#%s] | Limit of [%s] reached, stopping.', $idx, $limit);
-                break;
+            if($match !== null) {
+                $result[] = $match;
+                $this->debug('Match [#%s] | Matched text: [%s].', $matchNumber, $matchedText);
+                $matchNumber++;
             }
-
-            // Determine the offset to access the information from
-            // in the matches array, depending on which switch case
-            // was matched.
-            if(!empty($result[1][$idx]))
-            {
-                $offset = 0;
-                $this->debug('Detected symbol on the front');
-            }
-            else if(!empty($result[31][$idx]))
-            {
-                $offset = 22;
-                $this->debug('Detected symbol at the end.');
-            }
-            else
-            {
-                $offset = 11;
-                $this->debug('Detected symbol after minus sign.');
-            }
-
-            // Extract the information from the capturing
-            // groups in the regex matches.
-            $symbol1 = $result[$offset+1][$idx];
-            $space1 = $result[$offset+2][$idx];
-            $sign = trim($result[$offset+3][$idx]);
-            $space2 = $result[$offset+4][$idx];
-            $symbol2 = $result[$offset+5][$idx];
-            $space3 = $result[$offset+6][$idx];
-            $number = $this->parseNumber($result[$offset+7][$idx], $result[$offset+8][$idx]);
-            $symbol3 = $result[$offset+9][$idx];
-            $space4 = $result[$offset+10][$idx];
-            $vat = $result[$offset+11][$idx];
-
-            // Determine the currency symbol to use, depending
-            // on which capturing group was filled in the regex
-            // (as they are all optional).
-            $currencySymbol = '';
-            if(!empty($symbol1)) { $currencySymbol = $symbol1; }
-            if(!empty($symbol2)) { $currencySymbol = $symbol2; }
-            if(!empty($symbol3)) { $currencySymbol = $symbol3; }
-
-            // No currency found? Ignore this number - It means
-            // that none of the capturing groups for currency
-            // symbols were filled, which means this is not a price.
-            if(empty($currencySymbol))
-            {
-                $this->debug('Match [#%s] | No currency symbol detected, skipping.', $idx);
-                if($this->debug) {
-                    echo print_r(array(
-                        '1. symbol #1' => $symbol1,
-                        '2. space #1' => ConvertHelper::hidden2visible($space1),
-                        '3. sign' => $sign,
-                        '4. space #2' => ConvertHelper::hidden2visible($space2),
-                        '5. symbol #2' => $symbol2,
-                        '6. space #3' => ConvertHelper::hidden2visible($space3),
-                        '7. price' => $number['number'],
-                        '8. decimals' => $number['decimals'],
-                        '9. symbol #3' => $symbol3,
-                        '10. space #4' => ConvertHelper::hidden2visible($space4),
-                        '11. vat' => $vat,
-                    ), true);
-                }
-                continue;
-            }
-
-            $currencyInstance = $this->currencies->autoDetect(
-                $currencySymbol,
-                $this->expected,
-                $this->symbolDefaults
-            );
-
-            // None of the currencies we were expecting match this
-            // currency symbol: In theory, this cannot happen because
-            // the regex only matches the expected currencies - but
-            // this way the static code analysers are happy.
-            if($currencyInstance === null)
-            {
-                $this->debug('Match [#%s] | No currency instance found for symbol [%s].', $idx, $currencySymbol);
-                continue;
-            }
-
-            // Remove irrelevant spaces to keep the right
-            // whitespace at the front of the price,
-            // depending on which optional capturing groups
-            // were filled in the regex matches.
-            if(!empty($symbol2)) { $space3 = ''; }
-            if(!empty($sign)) { $space2 = ''; }
-            if(!empty($symbol1)) { $space1 = ''; }
-
-            // Determine which of the spaces to keep in front
-            // of the number, if any. We do this in reverse
-            // order to keep the frontmost space that is not
-            // empty.
-            $spaceFront = '';
-            if(!empty($space3)) { $spaceFront = $space3; }
-            if(!empty($space2)) { $spaceFront = $space2; }
-            if(!empty($space1)) { $spaceFront = $space1; }
-
-            $spaceEnd = $space4;
-            if(!empty($vat))
-            {
-                $spaceEnd = '';
-            }
-
-            if($this->debug)
-            {
-                $this->debug('Match [#%s] | Detected a valid match. Details follow:', $idx);
-
-                echo print_r(array(
-                    '1. symbol #1' => $symbol1,
-                    '2. space #1' => ConvertHelper::hidden2visible($space1),
-                    '3. sign' => $sign,
-                    '4. space #2' => ConvertHelper::hidden2visible($space2),
-                    '5. symbol #2' => $symbol2,
-                    '6. space #3' => ConvertHelper::hidden2visible($space3),
-                    '7. price' => $number['number'],
-                    '8. decimals' => $number['decimals'],
-                    '9. symbol #3' => $symbol3,
-                    '10. space #4' => ConvertHelper::hidden2visible($space4),
-                    '11. vat' => $vat,
-
-                    '_match' => $match,
-                    '_currency' => $currencySymbol,
-                    '_spaceFront' => ConvertHelper::hidden2visible($spaceFront),
-                    '_spaceEnd' => ConvertHelper::hidden2visible($spaceEnd),
-                    '_numberInfo' => $number
-                ), true);
-            }
-
-            $prices[] = new PriceMatch(
-                $match,
-                $currencySymbol,
-                $currencyInstance,
-                $number['number'],
-                $number['decimals'],
-                $sign,
-                $spaceFront,
-                $spaceEnd,
-                strtoupper($vat)
-            );
-
-            $amount++;
         }
 
-        return new PriceMatches($subject, $prices);
+        return new PriceMatches($subject, $result);
     }
 
     /**
-     * @param string $subject
+     * Parses a single matched price.
+     *
+     * @param int $matchNumber
+     * @param string $matchedText
      * @return PriceMatch|null
-     * @throws CurrencyParserException
      */
-    public function findFirstPrice(string $subject) : ?PriceMatch
+    private function parseMatch(int $matchNumber, string $matchedText) : ?PriceMatch
     {
-        return $this->findPrices($subject, 1)->getFirst();
+        preg_match('/(\s*)(.*)(\s*)/', $matchedText, $result);
+
+        $spaceFront = $result[1];
+        $price = str_replace(' ', '', $result[2]);
+        $spaceEnd = $result[3];
+
+        preg_match(
+            sprintf(
+                //        1     2     3    4       5        6   7      8
+                '/(-?)(%1$s)?(-?)(%1$s)?([0-9,. ]+)(-?)(%1$s)?(TTC|HT)?/',
+                $this->compileSymbolRegex()
+            ),
+            $price,
+            $result
+        );
+
+        // To facilitate finding the filled positions in the matches
+        $result = $this->nullifyEmpty($result);
+
+        $sign = $result[1] ?? $result[3] ?? '';
+        $currencySymbol = $result[2] ?? $result[4] ?? $result[7] ?? '';
+        $number = $this->parseNumber($result[5], $result[6]);
+        $vat = $result[8] ?? '';
+
+        $currencyInstance = $this->currencies->autoDetect(
+            $currencySymbol,
+            $this->expected,
+            $this->symbolDefaults
+        );
+
+        // None of the currencies we were expecting match this
+        // currency symbol: In theory, this cannot happen because
+        // the regex only matches the expected currencies - but
+        // this way the static code analysers are happy.
+        if($currencyInstance === null)
+        {
+            $this->debug('Match [#%s] | No currency instance found for symbol [%s].', $matchNumber, $currencySymbol);
+            return null;
+        }
+
+        if($this->debug) {
+            print_r(array(
+                'matchedText' => $matchedText,
+                'spaceFront' => ConvertHelper::hidden2visible($spaceFront),
+                'minus' => $sign,
+                'currencySymbol' => $currencySymbol,
+                'number' => $number,
+                'vat' => $vat,
+                'spaceEnd' => ConvertHelper::hidden2visible($spaceEnd),
+                'matches' => $result
+            ));
+        }
+
+        return new PriceMatch(
+            $matchedText,
+            $currencySymbol,
+            $currencyInstance,
+            $number['number'],
+            $number['decimals'],
+            $sign,
+            $spaceFront,
+            $spaceEnd,
+            $vat
+        );
+    }
+
+    private function nullifyEmpty(array $values) : array
+    {
+        foreach($values as $key => $value)
+        {
+            if(empty(trim($value))) {
+                $values[$key] = null;
+            }
+        }
+
+        return $values;
     }
 
     /**
@@ -378,10 +310,10 @@ class PriceParser
      * - 1000,-
      *
      * @param string $number
-     * @param string $specialDecimals
+     * @param string|NULL $specialDecimals
      * @return array{number:int,decimals:string,_normalized:string,_parts:array<int,string>}
      */
-    private function parseNumber(string $number, string $specialDecimals) : ?array
+    private function parseNumber(string $number, ?string $specialDecimals) : ?array
     {
         $normalized = str_replace(array(',', '.', ' '), '_', trim($number));
         $parts = explode('_', $normalized);
@@ -392,8 +324,7 @@ class PriceParser
             return array(
                 'number' => (int)implode('', $parts),
                 'decimals' => '-',
-                '_normalized' => $normalized,
-                '_parts' => $parts
+                '_normalized' => $normalized
             );
         }
 
@@ -404,8 +335,7 @@ class PriceParser
             return array(
                 'number' => (int)$decimals,
                 'decimals' => '',
-                'normalized' => $normalized,
-                'parts' => $parts
+                'normalized' => $normalized
             );
         }
 
@@ -415,16 +345,14 @@ class PriceParser
             return array(
                 'number' => (int)implode('', $parts),
                 'decimals' => '',
-                'normalized' => $normalized,
-                'parts' => $parts
+                'normalized' => $normalized
             );
         }
 
         return array(
             'number' => (int)implode('', $parts),
             'decimals' => $decimals,
-            'normalized' => $normalized,
-            'parts' => $parts
+            'normalized' => $normalized
         );
     }
 
