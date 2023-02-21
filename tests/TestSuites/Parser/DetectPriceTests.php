@@ -243,6 +243,14 @@ EOT;
         $this->assertSame($prices[2]->getCurrencyName(), 'CAD');
     }
 
+    public function test_parseSinglePrice() : void
+    {
+        $price = PriceParser::parsePrice('$500');
+
+        $this->assertNotNull($price);
+        $this->assertSame(500.00, $price->getAsFloat());
+    }
+
     // endregion
 
     // region: Support methods

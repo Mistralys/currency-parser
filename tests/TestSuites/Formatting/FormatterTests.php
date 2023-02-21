@@ -41,7 +41,7 @@ final class FormatterTests extends CurrencyParserTestCase
 
         $this->assertSame(
             '-&#160;1&#160;000,00&#160;€&#160;TTC',
-            PriceFormatter::createForLocale('EUR_FR')
+            PriceFormatter::createLocale('EUR_FR')
                 ->formatPrice($price)
         );
     }
@@ -63,9 +63,22 @@ final class FormatterTests extends CurrencyParserTestCase
 
         $this->assertSame(
             '-&#160;1&#160;000,00&#160;€&#160;TTC',
-            PriceFormatter::createForLocale('EUR_FR')
+            PriceFormatter::createLocale('EUR_FR')
                 ->setSymbolModeSymbol()
                 ->formatPrice($price)
+        );
+    }
+
+    public function test_priceFormatMethod() : void
+    {
+        $this->assertSame(
+            '-&#160;1&#160;000,00&#160;EUR&#160;TTC',
+            $this
+                ->createTestParser()
+                ->expectCurrency('EUR')
+                ->findPrices('-1,000.00 EUR TTC')
+                ->requireFirst()
+                ->formatForLocale('EUR_FR')
         );
     }
 }
