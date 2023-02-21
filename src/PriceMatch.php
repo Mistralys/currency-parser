@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Mistralys\CurrencyParser;
 
+use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
+
 class PriceMatch
 {
     private BaseCurrency $currency;
@@ -49,9 +51,26 @@ class PriceMatch
         return $this->number;
     }
 
+    /**
+     * The decimals can be either a number, or
+     * the german short notation hyphen.
+     *
+     * @return string
+     */
     public function getDecimals(): string
     {
         return $this->decimals;
+    }
+
+    public function getDecimalsInt() : int
+    {
+        $decimals = $this->getDecimals();
+
+        if(is_numeric($decimals)) {
+            return (int)$decimals;
+        }
+
+        return 0;
     }
 
     public function hasDecimals() : bool
@@ -74,6 +93,29 @@ class PriceMatch
         }
 
         return ((float)($number.'.'.$decimals)) * $multiplier;
+    }
+
+    /**
+     * Gets the price in money integer notation, to
+     * use with the Money library for example.
+     *
+     * Examples:
+     *
+     * <pre>
+     *  5.00 => 500
+     * 50.00 => 5000
+     * </pre>
+     *
+     * @return int
+     * @link https://github.com/moneyphp/money
+     */
+    public function getAsMoney() : int
+    {
+        return (int)sprintf(
+            '%d%02d',
+            $this->getNumber(),
+            $this->getDecimalsInt()
+        );
     }
 
     public function isNegative() : bool
@@ -111,8 +153,28 @@ class PriceMatch
         return $this->matchedString;
     }
 
-    public function formatForLocale($nameOrInstance) : string
+    /**
+     * Formats the price using the currency's default locale.
+     *
+     * @param string|BaseCurrencyLocale|NULL $localeNameOrInstance
+     * @return string
+     * @throws CurrencyParserException
+     */
+    public function format($localeNameOrInstance=null) : string
     {
-        return PriceFormatter::createLocale($nameOrInstance)->formatPrice($this);
+        if($localeNameOrInstance === null) {
+            $localeNameOrInstance = $this->currency->getDefaultLocale();
+        }
+
+        return currencyLocale($localeNameOrInstance)->formatPrice($this);
+    }
+
+    public function createFilter($localeNameOrInstance=null) : PriceFilter
+    {
+        if($localeNameOrInstance === null) {
+            $localeNameOrInstance = $this->currency->getDefaultLocale();
+        }
+
+        return PriceFilter::createForLocales($localeNameOrInstance);
     }
 }
