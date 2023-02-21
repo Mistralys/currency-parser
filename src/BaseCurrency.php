@@ -11,32 +11,33 @@ use AppUtils\FileHelper_Exception;
 use Mistralys\CurrencyParser\Currencies\EUR;
 use Mistralys\CurrencyParser\Currencies\EUR\EUR_DE;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
+use testsuites\FileHelperTests\PathInfoTest;
 
 abstract class BaseCurrency
 {
-    public const ERROR_INVALID_FORMAT_INSTANCE = 127801;
-    public const ERROR_CANNOT_LOAD_FORMATTERS = 127802;
+    public const ERROR_INVALID_LOCALE_INSTANCE = 127801;
+    public const ERROR_CANNOT_LOAD_LOCALES = 127802;
 
     private static ?string $referenceClass = null;
 
     /**
-     * @var array<string,BaseCurrencyFormat>
+     * @var array<string,BaseCurrencyLocale>
      */
     private array $isoIndex = array();
 
     /**
-     * @var array<string,BaseCurrencyFormat>
+     * @var array<string,BaseCurrencyLocale>
      */
     private array $idIndex = array();
 
     /**
      * @throws CurrencyParserException
-     * @see self::ERROR_INVALID_FORMAT_INSTANCE
-     * @see self::ERROR_CANNOT_LOAD_FORMATTERS
+     * @see self::ERROR_INVALID_LOCALE_INSTANCE
+     * @see self::ERROR_CANNOT_LOAD_LOCALES
      */
     public function __construct()
     {
-        $this->initFormatters();
+        $this->initLocales();
     }
 
     private function getReferenceClass() : string
@@ -46,7 +47,7 @@ abstract class BaseCurrency
         }
 
         $replaces = array(
-            BaseCurrencyFormat::getIDByClass(EUR_DE::class) => '{FORMAT_ID}',
+            BaseCurrencyLocale::getIDByClass(EUR_DE::class) => '{FORMAT_ID}',
             ClassHelper::getClassTypeName(EUR::class) => '{CURRENCY_ID}'
         );
 
@@ -57,6 +58,7 @@ abstract class BaseCurrency
 
     abstract public function getName(): string;
     abstract public function getSymbol(): string;
+    abstract public function getDefaultLocaleISO() : string;
 
     abstract public function getEntityNumber(): int;
 
@@ -69,9 +71,9 @@ abstract class BaseCurrency
     }
 
     /**
-     * @return BaseCurrencyFormat[]
+     * @return BaseCurrencyLocale[]
      */
-    public function getFormatters() : array
+    public function getLocales() : array
     {
         return array_values($this->idIndex);
     }
@@ -80,10 +82,10 @@ abstract class BaseCurrency
      * @return void
      *
      * @throws CurrencyParserException
-     * @see self::ERROR_INVALID_FORMAT_INSTANCE
-     * @see self::ERROR_CANNOT_LOAD_FORMATTERS
+     * @see self::ERROR_INVALID_LOCALE_INSTANCE
+     * @see self::ERROR_CANNOT_LOAD_LOCALES
      */
-    private function initFormatters() : void
+    private function initLocales() : void
     {
         try
         {
@@ -93,36 +95,41 @@ abstract class BaseCurrency
         catch (FileHelper_Exception $e)
         {
             throw new CurrencyParserException(
-                'Could not access the currency formats folder.',
+                'Could not access the currency locales folder.',
                 sprintf(
-                    'Failed to load the formatter IDs for currency [%s].',
+                    'Failed to load the locale IDs for currency [%s].',
                     $this->getName()
                 ),
-                self::ERROR_CANNOT_LOAD_FORMATTERS,
+                self::ERROR_CANNOT_LOAD_LOCALES,
                 $e
             );
         }
 
         foreach($ids as $id)
         {
-            $this->registerFormatter($id);
+            $this->registerLocale($id);
         }
     }
 
     /**
      * @param string $iso Country ISO code, case insensitive. Examples: "de", "FR".
-     * @return BaseCurrencyFormat|null
+     * @return BaseCurrencyLocale|null
      */
-    public function getFormatterByISO(string $iso) : ?BaseCurrencyFormat
+    public function getLocaleByISO(string $iso) : ?BaseCurrencyLocale
     {
         return $this->isoIndex[strtolower($iso)] ?? null;
     }
 
+    public function getDefaultLocale() : BaseCurrencyLocale
+    {
+        return $this->getLocaleByISO($this->getDefaultLocaleISO());
+    }
+
     /**
      * @param string $id The formatter ID, e.g. "EUR_DE". Case sensitive.
-     * @return BaseCurrencyFormat|null
+     * @return BaseCurrencyLocale|null
      */
-    public function getFormatterByID(string $id) : ?BaseCurrencyFormat
+    public function getLocaleByID(string $id) : ?BaseCurrencyLocale
     {
         return $this->idIndex[$id] ?? null;
     }
@@ -130,9 +137,9 @@ abstract class BaseCurrency
     /**
      * @param string $id
      * @return void
-     * @throws CurrencyParserException {@see BaseCurrency::ERROR_INVALID_FORMAT_INSTANCE}
+     * @throws CurrencyParserException {@see BaseCurrency::ERROR_INVALID_LOCALE_INSTANCE}
      */
-    private function registerFormatter(string $id) : void
+    private function registerLocale(string $id) : void
     {
         $replaces = array(
             '{FORMAT_ID}' => $id,
@@ -143,27 +150,27 @@ abstract class BaseCurrency
 
         try
         {
-            $format = ClassHelper::requireObjectInstanceOf(
-                BaseCurrencyFormat::class,
+            $locale = ClassHelper::requireObjectInstanceOf(
+                BaseCurrencyLocale::class,
                 new $class($this)
             );
         }
         catch (BaseClassHelperException $e)
         {
             throw new CurrencyParserException(
-                'Could not register currency format.',
+                'Could not register currency locale.',
                 sprintf(
                     'The class [%s] is not an instance of [%s].',
                     $class,
-                    BaseCurrencyFormat::class
+                    BaseCurrencyLocale::class
                 ),
-                self::ERROR_INVALID_FORMAT_INSTANCE,
+                self::ERROR_INVALID_LOCALE_INSTANCE,
                 $e
             );
         }
 
-        $this->isoIndex[$format->getCountryISO()] = $format;
-        $this->idIndex[$format->getID()] = $format;
+        $this->isoIndex[$locale->getCountryISO()] = $locale;
+        $this->idIndex[$locale->getID()] = $locale;
     }
 }
 
