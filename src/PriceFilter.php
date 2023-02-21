@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Mistralys\CurrencyParser;
 
+use AppLocalize\Localization;
+use AppLocalize\Localization_Country;
+use AppLocalize\Localization_Exception;
 use AppUtils\FileHelper\FileInfo;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
-use function AppUtils\parseVariable;
 
 class PriceFilter
 {
-    public const ERROR_INVALID_CURRENCY = 129801;
-
     /**
      * @var PriceFormatter[]
      */
@@ -19,64 +19,161 @@ class PriceFilter
 
     private PriceParser $parser;
 
-    private function __construct(PriceParser $parser)
+    private function __construct(?PriceParser $parser=null)
     {
-        $this->parser = $parser;
+        $this->parser = $parser ?? PriceParser::create();
     }
+
+    // region: A - Creating instances
 
     /**
      * Creates a filter for an existing parser instance: will format
      * all currencies that the parser is configured for.
      *
-     * @param PriceParser $parser
+     * @param PriceParser|NULL $parser Optional parser instance to use.
      * @return PriceFilter
      */
-    public static function create(PriceParser $parser) : PriceFilter
+    public static function create(?PriceParser $parser=null) : PriceFilter
     {
         return new PriceFilter($parser);
     }
 
     /**
-     * Creates a filter for the specified currencies. The parser
-     * instance is created automatically for the currencies.
+     * Creates a filter for the specified currency locales. The parser
+     * instance is created automatically for the related currencies,
+     * and formatters set for each.
      *
-     * @param string|BaseCurrency ...$currencies Currency names (e.g. "USD") or currency instances.
+     * @param string|BaseCurrency ...$locales Locale names (e.g. "EUR_FR", "USD") or locale instances.
      * @return PriceFilter
      * @throws CurrencyParserException
      */
-    public static function createForCurrencies(...$currencies) : PriceFilter
+    public static function createForLocales(...$locales) : PriceFilter
     {
-        return self::create(
-            PriceParser::create()
-                ->expectCurrencies(...$currencies)
+        $collection = Currencies::getInstance();
+        $filter = self::create();
+
+        foreach($locales as $nameOrInstance)
+        {
+            $filter->setFormatterByLocale($collection->getLocale($nameOrInstance));
+        }
+
+        return $filter;
+    }
+
+    /**
+     * Creates a filter and configures currency locales for the
+     * specified countries.
+     *
+     * @param string|Localization_Country ...$countries
+     * @return PriceFilter
+     * @throws CurrencyParserException
+     * @throws PriceFormatterException
+     * @throws Localization_Exception
+     */
+    public static function createForCountries(...$countries) : PriceFilter
+    {
+        $collection = Currencies::getInstance();
+        $filter = self::create();
+
+        foreach($countries as $isoOrInstance)
+        {
+            if($isoOrInstance instanceof Localization_Country) {
+                $country = $isoOrInstance;
+            } else {
+                $country = Localization::createCountry($isoOrInstance);
+            }
+
+            $filter->setFormatterByLocale($collection->getLocaleByCountry($country));
+        }
+
+        return $filter;
+    }
+
+    // endregion
+
+    // region: C - Handling formatters
+
+    /**
+     * @param string|BaseCurrencyLocale $localeNameOrInstance
+     * @return $this
+     * @throws CurrencyParserException
+     * @throws PriceFormatterException
+     */
+    public function setFormatterByLocale($localeNameOrInstance) : self
+    {
+        $locale = Currencies::getInstance()->getLocale($localeNameOrInstance);
+
+        return $this->setFormatter(
+            $locale->getCurrency(),
+            PriceFormatter::createForLocale($locale)
         );
+    }
+
+    /**
+     * Sets a currency locale formatter using the specified
+     * country instance.
+     *
+     * @param Localization_Country $country
+     * @return $this
+     * @throws CurrencyParserException
+     * @throws PriceFormatterException
+     */
+    public function setFormatterByCountry(Localization_Country $country) : self
+    {
+        return $this->setFormatterByLocale(Currencies::getInstance()->getLocaleByCountry($country));
     }
 
     /**
      * Sets a specific formatter to use for the target currency.
      *
+     * NOTE: This is currency-locale-agnostic on purpose, so
+     * custom formatters may be used for a currency.
+     *
      * @param string|BaseCurrency $currencyNameOrInstance
      * @param PriceFormatter $formatter
      * @return $this
-     * @throws PriceFilterException
+     * @throws CurrencyParserException
      */
     public function setFormatter($currencyNameOrInstance, PriceFormatter $formatter) : self
     {
-        $currency = Currencies::getInstance()->resolveCurrency($currencyNameOrInstance);
+        $currency = Currencies::getInstance()->getCurrency($currencyNameOrInstance);
 
-        if($currency !== null) {
-            $this->formatters[$currency->getName()] = $formatter;
-            return $this;
-        }
+        $this->parser->expectCurrency($currency);
+        $this->formatters[$currency->getName()] = $formatter;
+        return $this;
+    }
 
-        throw new PriceFilterException(
-            'Invalid currency specified.',
-            sprintf(
-                'Could not determine the currency to use. Given: [%s].',
-                parseVariable($currencyNameOrInstance)->enableType()->toString()
-            ),
-            self::ERROR_INVALID_CURRENCY
-        );
+    /**
+     * @param string|BaseCurrency $currencyNameOrInstance
+     * @return PriceFormatter|null
+     * @throws CurrencyParserException
+     */
+    public function getFormatter($currencyNameOrInstance) : ?PriceFormatter
+    {
+        $currency = Currencies::getInstance()->getCurrency($currencyNameOrInstance);
+
+        return $this->formatters[$currency->getName()] ?? null;
+    }
+
+    /**
+     * Checks whether a formatter has been set for the specified currency.
+     *
+     * @param string|BaseCurrency $currencyNameOrInstance
+     * @return bool
+     * @throws CurrencyParserException
+     */
+    public function hasFormatter($currencyNameOrInstance) : bool
+    {
+        return $this->getFormatter($currencyNameOrInstance) !== null;
+    }
+
+    // endregion
+
+    // region: B - Filtering methods
+
+    public function filterFile(FileInfo $file) : string
+    {
+        return $this->filterString($file->getContents());
     }
 
     /**
@@ -103,10 +200,7 @@ class PriceFilter
         );
     }
 
-    public function getFormatter(BaseCurrency $currency) : ?PriceFormatter
-    {
-        return $this->formatters[$currency->getName()] ?? null;
-    }
+    // endregion
 
     /**
      * @param PriceMatch $price
@@ -127,11 +221,6 @@ class PriceFilter
         $this->setFormatter($currency, $formatter);
 
         return $formatter;
-    }
-
-    public function filterFile(FileInfo $file) : string
-    {
-        return $this->filterString($file->getContents());
     }
 
     public function setDebugEnabled(bool $enabled=true) : self
