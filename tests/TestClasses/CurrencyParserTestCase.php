@@ -16,10 +16,15 @@ abstract class CurrencyParserTestCase extends TestCase
         $this->debug = true;
     }
 
+    public function isDebugEnabled() : bool
+    {
+        return $this->debug;
+    }
+
     public function createTestParser(): PriceParser
     {
         return PriceParser::create()
-            ->setDebugEnabled($this->debug);
+            ->setDebugEnabled($this->isDebugEnabled());
     }
 
     protected function tearDown(): void

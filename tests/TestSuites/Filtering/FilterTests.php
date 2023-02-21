@@ -26,6 +26,7 @@ EOT;
         $this->assertSame(
             $expected,
             PriceFilter::createForCurrencies('EUR')
+                ->setDebugEnabled($this->isDebugEnabled())
                 ->filterString($subject)
         );
     }
