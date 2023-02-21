@@ -11,10 +11,16 @@ class GBP extends BaseCurrency
     public const CURRENCY_NAME = 'GBP';
     public const CURRENCY_SYMBOL = '£';
     public const CURRENCY_ENTITY_NUMBER = 163;
+    public const CURRENCY_DEFAULT_ISO = 'GB';
 
     public function getName(): string
     {
         return self::CURRENCY_NAME;
+    }
+
+    public function getDefaultLocaleISO(): string
+    {
+        return self::CURRENCY_DEFAULT_ISO;
     }
 
     public function getSymbol(): string

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Mistralys\CurrencyParser\Currencies\MXN;
 
-use Mistralys\CurrencyParser\BaseCurrencyFormat;
+use Mistralys\CurrencyParser\BaseCurrencyLocale;
 use Mistralys\CurrencyParser\Currencies\MXN;
 use Mistralys\CurrencyParser\PriceFormatter;
 
 /**
  * @property MXN $currency
  */
-class MXN_MX extends BaseCurrencyFormat
+class MXN_MX extends BaseCurrencyLocale
 {
     public function getCurrency(): MXN
     {
@@ -40,11 +40,20 @@ class MXN_MX extends BaseCurrencyFormat
 
     public function getSymbolPosition(): string
     {
-        return PriceFormatter::SYMBOL_POSITION_BEFORE_MINUS;
+        return PriceFormatter::SYMBOL_POSITION_BEFORE_MINUS; // MXN -50
     }
 
     public function getPreferredSymbolType(): string
     {
         return self::SYMBOL_TYPE_NAME;
+    }
+
+    public function getSymbolSpaceStyles(): array
+    {
+        return array(
+            PriceFormatter::SYMBOL_POSITION_END => PriceFormatter::SPACE_BEFORE, // 50 MXN
+            PriceFormatter::SYMBOL_POSITION_BEFORE_MINUS => PriceFormatter::SPACE_AFTER, // MXN -50
+            PriceFormatter::SYMBOL_POSITION_AFTER_MINUS => PriceFormatter::SPACE_AFTER // -MXN 50
+        );
     }
 }

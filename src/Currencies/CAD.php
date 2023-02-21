@@ -11,10 +11,16 @@ class CAD extends BaseCurrency
     public const CURRENCY_NAME = 'CAD';
     public const CURRENCY_SYMBOL = '$';
     public const CURRENCY_ENTITY_NUMBER = 36;
+    public const CURRENCY_DEFAULT_ISO = 'CA';
 
     public function getName(): string
     {
         return self::CURRENCY_NAME;
+    }
+
+    public function getDefaultLocaleISO(): string
+    {
+        return self::CURRENCY_DEFAULT_ISO;
     }
 
     public function getSymbol(): string

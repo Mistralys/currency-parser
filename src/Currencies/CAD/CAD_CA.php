@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Mistralys\CurrencyParser\Currencies\CAD;
 
-use Mistralys\CurrencyParser\BaseCurrencyFormat;
+use Mistralys\CurrencyParser\BaseCurrencyLocale;
 use Mistralys\CurrencyParser\Currencies\USD;
 use Mistralys\CurrencyParser\PriceFormatter;
 
 /**
  * @property USD $currency
  */
-class CAD_CA extends BaseCurrencyFormat
+class CAD_CA extends BaseCurrencyLocale
 {
     public function getCurrency(): USD
     {

@@ -11,10 +11,16 @@ class EUR extends BaseCurrency
     public const CURRENCY_NAME = 'EUR';
     public const CURRENCY_SYMBOL = '€';
     public const CURRENCY_ENTITY_NUMBER = 8211;
+    public const CURRENCY_DEFAULT_ISO = 'EU';
 
     public function getName(): string
     {
         return self::CURRENCY_NAME;
+    }
+
+    public function getDefaultLocaleISO(): string
+    {
+        return self::CURRENCY_DEFAULT_ISO;
     }
 
     public function getSymbol(): string
