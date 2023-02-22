@@ -9,7 +9,7 @@ use Mistralys\CurrencyParser\Currencies;
 use Mistralys\CurrencyParser\PriceFormatter;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
-class CustomFormatter extends PriceFormatter
+abstract class BaseCustomFormatter extends PriceFormatter
 {
     protected string $decimalSeparator;
     protected string $thousandsSeparator;
@@ -140,6 +140,21 @@ class CustomFormatter extends PriceFormatter
     {
         $this->symbolSpaceStyles[$position] = $style;
         return $this;
+    }
+
+    public function setSymbolSpaceBeforeMinus(string $style) : self
+    {
+        return $this->setSymbolSpaceStyle(self::SYMBOL_POSITION_BEFORE_MINUS, $style);
+    }
+
+    public function setSymbolSpaceAfterMinus(string $style) : self
+    {
+        return $this->setSymbolSpaceStyle(self::SYMBOL_POSITION_AFTER_MINUS, $style);
+    }
+
+    public function setSymbolSpaceAtTheEnd(string $style) : self
+    {
+        return $this->setSymbolSpaceStyle(self::SYMBOL_POSITION_END, $style);
     }
 
     public function setDecimalSeparator(string $separator) : self

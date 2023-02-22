@@ -7,7 +7,7 @@ namespace Mistralys\CurrencyParser\Formatter;
 use Mistralys\CurrencyParser\BaseCurrencyLocale;
 use Mistralys\CurrencyParser\PriceFormatter;
 
-class LocaleFormatter extends PriceFormatter
+abstract class BaseLocaleFormatter extends PriceFormatter
 {
     private BaseCurrencyLocale $locale;
 
