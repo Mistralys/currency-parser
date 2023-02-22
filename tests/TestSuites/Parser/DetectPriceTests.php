@@ -251,6 +251,18 @@ EOT;
         $this->assertSame(500.00, $price->getAsFloat());
     }
 
+    /**
+     * Parsing a price with non-breaking spaces must be possible.
+     */
+    public function test_parseWithNonBreakingSpaces() : void
+    {
+        $price = PriceParser::parsePrice('€ 1 000,00 TTC');
+
+        $this->assertSame(1000.00, $price->getAsFloat());
+        $this->assertSame('TTC', $price->getVAT());
+        $this->assertSame('€', $price->getMatchedCurrencySymbol());
+    }
+
     // endregion
 
     // region: Support methods
