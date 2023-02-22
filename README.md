@@ -54,7 +54,7 @@ Base price: $1,000.00
 Your price: $860.00
 EOT;
 
-$prices = findPrices($subject);
+$prices = findPrices($subject, 'USD');
 
 foreach($prices as $price)
 {
@@ -161,7 +161,7 @@ Prix de départ: 1 000,00 EUR
 Prix spécial: 860,00 EUR
 ```
 
-### Change the currency symbol style    
+### Change the currency symbol    
 
 By default, the currency filter makes no changes to the currency symbols
 used in the document. This means that a mixed symbol usage will remain the
@@ -246,7 +246,7 @@ prices any way you like.
 
 ### Locale-based formatting
 
-Fire-and-forget formatting that uses the locale definitions.
+Fire-and-forget formatting that uses the currency locale definitions.
 
 ```php
 use Mistralys\CurrencyParser\PriceFormatter;
@@ -257,7 +257,7 @@ echo PriceFormatter::createLocale('USD')
 ```
 
 A locale formatter does not allow changing formatting details like the decimal
-separator. The symbol mode and space character can be adjusted, however:
+separator. Only the symbol mode and space character can be adjusted:
 
 ```php
 use Mistralys\CurrencyParser\PriceFormatter;
@@ -295,12 +295,98 @@ Output:
 
 > NOTE: A formatter instance can be re-used as necessary.
 
+### Custom formatter based on a locale
+
+Let's say that we wish to use the default USD formatting, but instead of placing
+the symbol at the beginning (default behavior), we want to display it at the end.
+
+We have to use a custom formatter for this, but we can use an existing locale
+formatter to fill out the default settings. All that's left to do then is overwrite
+the relevant settings.
+
+```php
+use Mistralys\CurrencyParser\PriceFormatter;
+
+$formatter = PriceFormatter::createCustom()
+    ->configureWithLocale(\Mistralys\CurrencyParser\currencyLocale('USD'))
+    ->setSymbolPositionAtTheEnd();
+```
+
 ## Filter usage
 
 ### What is the price filter?
 
-The Filter is used to format multiple prices in text or markup documents, 
-leaving the rest of the document intact.
+The Filter is used to format multiple prices in text or markup documents,
+with a minimum of code, and leaving the rest of the document intact. 
+
+### Filtering a text document
+
+The fire and forget version of filtering a document is to specify what kind
+of currencies to expect, and let the filter handle all the details based on
+how the currency is typically formatted.
+
+```php
+use Mistralys\CurrencyParser\PriceFilter;
+
+$formatted = PriceFilter::createForLocales('USD')
+    ->filterString($subject);
+```
+
+### Filtering an HTML document
+
+This works exactly like a text document, except that the non-breaking space
+character is adjusted to use the HTML style (which uses an HTML entity instead
+of the actual character).
+
+```php
+use Mistralys\CurrencyParser\PriceFilter;
+
+$formatted = PriceFilter::createForLocales('USD')
+    ->setNonBreakingSpaceHTML()
+    ->filterString($subject);
+```
+
+### Using custom formatters
+
+To use a custom formatter for a currency instead of the locale-based one, the
+formatter instance must be set separately.
+
+```php
+use Mistralys\CurrencyParser\PriceFilter;
+use Mistralys\CurrencyParser\PriceFormatter;
+
+// Configure a custom formatter
+$customFormatter = PriceFormatter::createCustom()
+    ->setDecimalSeparator(' ')
+    ->setThousandsSeparator(',')
+    ->setSymbolPositionBeforeMinus()
+    ->setSymbolModeName();
+
+$formatted = PriceFilter::create()
+    ->setFormatter('USD', $customFormatter)
+    ->filterString($subject);
+```
+
+Custom formatters and locale formatters can be freely combined. In the example
+above, we used `PriceFilter::create()`, because all formatters were custom. 
+Here, we use  a default locale formatter for french prices, and a custom one
+for U.S. dollars:
+
+```php
+use Mistralys\CurrencyParser\PriceFilter;
+use Mistralys\CurrencyParser\PriceFormatter;
+
+// Configure a custom formatter
+$customFormatter = PriceFormatter::createCustom()
+    ->setDecimalSeparator(' ')
+    ->setThousandsSeparator(',')
+    ->setSymbolPositionBeforeMinus()
+    ->setSymbolModeName();
+
+$formatted = PriceFilter::createForLocales('EUR_FR')
+    ->setFormatter('USD', $customFormatter)
+    ->filterString($subject);
+```
 
 ## Parser usage
 
@@ -415,6 +501,12 @@ echo $prices[3]->getCurrencyName(); // CAD
 > If the document uses multiple currencies with the same symbol, this will not make 
 > it possible to distinguish between them. Only using currency names can solve such 
 > cases.
+
+## Handling multi-currency documents
+
+In documents with multiple currencies, if they use the same symbol (USD and CAD
+for example), one must be set as default.
+
 
 ## Philosophy
 
