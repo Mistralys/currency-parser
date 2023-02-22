@@ -6,11 +6,11 @@ namespace Mistralys\CurrencyParser\Formatter;
 
 use Mistralys\CurrencyParser\PriceMatch;
 
-class IndividualCustomFormatter extends BaseLocaleFormatter
+class IndividualCustomFormatter extends BaseCustomFormatter
 {
     public function __construct(PriceMatch $price)
     {
-        parent::__construct($price->getLocale());
+        parent::__construct();
 
         $this->workPrice = $price;
     }
