@@ -6,6 +6,7 @@ namespace Mistralys\CurrencyParserTests\TestSuites\Formatting;
 
 use AppUtils\FileHelper\FileInfo;
 use Mistralys\CurrencyParser\PriceFilter;
+use Mistralys\CurrencyParser\PriceParser;
 use Mistralys\CurrencyParserTests\TestClasses\CurrencyParserTestCase;
 use function Mistralys\CurrencyParser\currencyLocale;
 
@@ -111,6 +112,19 @@ EOT;
         $filter = currencyLocale('USD')->createFilter();
 
         $this->assertTrue($filter->hasFormatter('USD'));
+    }
+
+    public function test_preserveWhitespace() : void
+    {
+        $subject = PHP_EOL.'    -    50    EUR    '.PHP_EOL;
+        $expected = PHP_EOL.'    -50 EUR    '.PHP_EOL;
+
+        $this->assertSame(
+            $expected,
+            currencyLocale('EUR')
+                ->createFilter()
+                ->filterString($subject)
+        );
     }
 
     public function test_filterFile() : void
