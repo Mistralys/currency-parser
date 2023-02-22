@@ -12,14 +12,17 @@
         <testsuite name="Currencies">
             <directory suffix=".php">./tests/TestSuites/Currencies</directory>
         </testsuite>
-        <testsuite name="Parser">
-            <directory suffix=".php">./tests/TestSuites/Parser</directory>
+        <testsuite name="Filtering">
+            <directory suffix=".php">./tests/TestSuites/Filtering</directory>
         </testsuite>
         <testsuite name="Formatting">
             <directory suffix=".php">./tests/TestSuites/Formatting</directory>
         </testsuite>
-        <testsuite name="Filtering">
-            <directory suffix=".php">./tests/TestSuites/Filtering</directory>
+        <testsuite name="Locales">
+            <directory suffix=".php">./tests/TestSuites/Locales</directory>
+        </testsuite>
+        <testsuite name="Parser">
+            <directory suffix=".php">./tests/TestSuites/Parser</directory>
         </testsuite>
     </testsuites>
 </phpunit>
