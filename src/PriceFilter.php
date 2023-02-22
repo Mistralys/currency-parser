@@ -9,13 +9,19 @@ use AppLocalize\Localization_Country;
 use AppLocalize\Localization_Exception;
 use AppUtils\FileHelper\FileInfo;
 use Mistralys\CurrencyParser\Formatter\PriceFormatterException;
+use Mistralys\CurrencyParser\Interfaces\NonBreakingSpaceInterface;
+use Mistralys\CurrencyParser\Interfaces\NonBreakingSpaceTrait;
 use Mistralys\CurrencyParser\Interfaces\SymbolModesInterface;
 use Mistralys\CurrencyParser\Interfaces\SymbolModesTrait;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
-class PriceFilter implements SymbolModesInterface
+class PriceFilter
+    implements
+    SymbolModesInterface,
+    NonBreakingSpaceInterface
 {
     use SymbolModesTrait;
+    use NonBreakingSpaceTrait;
 
     /**
      * @var PriceFormatter[]
@@ -109,7 +115,7 @@ class PriceFilter implements SymbolModesInterface
         $locale = Currencies::getInstance()->getLocale($localeNameOrInstance);
 
         return $this->setFormatter(
-            $locale->getCurrency(),
+            $locale,
             PriceFormatter::createLocale($locale)
         );
     }
@@ -134,17 +140,17 @@ class PriceFilter implements SymbolModesInterface
      * NOTE: This is currency-locale-agnostic on purpose, so
      * custom formatters may be used for a currency.
      *
-     * @param string|BaseCurrency $currencyNameOrInstance
+     * @param string|BaseCurrencyLocale $nameOrInstance
      * @param PriceFormatter $formatter
      * @return $this
      * @throws CurrencyParserException
      */
-    public function setFormatter($currencyNameOrInstance, PriceFormatter $formatter) : self
+    public function setFormatter($nameOrInstance, PriceFormatter $formatter) : self
     {
-        $currency = Currencies::getInstance()->getCurrency($currencyNameOrInstance);
+        $locale = Currencies::getInstance()->getLocale($nameOrInstance);
 
-        $this->parser->expectCurrency($currency);
-        $this->formatters[$currency->getName()] = $formatter;
+        $this->parser->expectCurrency($locale);
+        $this->formatters[$locale->getCurrency()->getName()] = $formatter;
         return $this;
     }
 
@@ -200,7 +206,7 @@ class PriceFilter implements SymbolModesInterface
 
         foreach($prices as $price)
         {
-            $replaces[$price->getMatchedString()] = $this->resolveFormatter($price)->formatPrice($price);
+            $replaces[$price->getMatchedString()] = $this->resolveFormatter($price)->format($price);
         }
 
         return str_replace(
@@ -228,9 +234,14 @@ class PriceFilter implements SymbolModesInterface
             $this->setFormatter($currency, $formatter);
         }
 
-        // Pass on the symbol mode, if one has been set
+        // Pass on the settings that have been set for the filter
+
         if(isset($this->symbolMode)) {
             $formatter->setSymbolMode($this->getSymbolMode());
+        }
+
+        if(isset($this->nonBreakingSpace)) {
+            $formatter->setNonBreakingSpace($this->getNonBreakingSpace());
         }
 
         return $formatter;
