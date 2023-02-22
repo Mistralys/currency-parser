@@ -7,13 +7,10 @@ namespace Mistralys\CurrencyParser;
 use AppLocalize\Localization_Country;
 use AppUtils\ClassHelper;
 use AppUtils\ClassHelper\BaseClassHelperException;
-use AppUtils\ClassHelper\ClassNotExistsException;
-use AppUtils\ClassHelper\ClassNotImplementsException;
 use AppUtils\FileHelper;
 use AppUtils\FileHelper_Exception;
 use Mistralys\CurrencyParser\Currencies\EUR;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
-use function AppUtils\parseVariable;
 
 class Currencies
 {
@@ -21,7 +18,6 @@ class Currencies
     public const ERROR_CANNOT_REGISTER_FORMATTER = 127702;
     public const ERROR_CANNOT_ACCESS_CURRENCIES_FOLDER = 127703;
     public const ERROR_UNKNOWN_CURRENCY_SYMBOL = 12704;
-    public const ERROR_UNKNOWN_CURRENCY = 12705;
     public const ERROR_UNKNOWN_CURRENCY_LOCALE = 12706;
 
     /**

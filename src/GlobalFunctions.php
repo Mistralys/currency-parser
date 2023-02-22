@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Mistralys\CurrencyParser;
 
-use Mistralys\CurrencyParser\Formatter\PriceFormatterException;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
 /**
@@ -36,19 +35,6 @@ function findPrices(string $subject, ...$currencies) : PriceMatches
     }
 
     return $parser->findPrices($subject);
-}
-
-/**
- * @param string $subject
- * @param string|BaseCurrencyLocale ...$locales
- * @return string
- * @throws CurrencyParserException
- * @throws PriceFormatterException
- * @throws PriceFilterException
- */
-function filterPrices(string $subject, ...$locales) : string
-{
-    return PriceFilter::createForLocales(...$locales)->filterString($subject);
 }
 
 /**

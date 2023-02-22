@@ -572,11 +572,6 @@ class PriceParser
         return implode('|', array_merge($symbols, $names, $entities));
     }
 
-    public function getLogIdentifier(): string
-    {
-        return 'PriceParser';
-    }
-
     private function debug(string $string, ...$params) : void
     {
         if(!$this->debug) {

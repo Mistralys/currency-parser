@@ -6,7 +6,6 @@ namespace Mistralys\CurrencyParser;
 
 use Mistralys\CurrencyParser\Formatter\IndividualCustomFormatter;
 use Mistralys\CurrencyParser\Formatter\IndividualLocaleFormatter;
-use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
 class PriceMatch
 {
@@ -166,7 +165,6 @@ class PriceMatch
      * Formats the price with text-based non-breaking spaces.
      *
      * @return string
-     * @throws CurrencyParserException
      */
     public function formatText() : string
     {
@@ -178,13 +176,12 @@ class PriceMatch
     /**
      * Formats the price
      * @return string
-     * @throws CurrencyParserException
      */
     public function formatHTML() : string
     {
         return $this->createFormatter()
             ->setNonBreakingSpaceHTML()
-            ->format($this);
+            ->format();
     }
 
     /**
@@ -206,11 +203,6 @@ class PriceMatch
     public function createCustomFormatter() : IndividualCustomFormatter
     {
         return new IndividualCustomFormatter($this);
-    }
-
-    public function createFilter() : PriceFilter
-    {
-        return PriceFilter::createForLocales($this->locale);
     }
 
     // endregion
