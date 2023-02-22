@@ -257,6 +257,43 @@ class PriceParser
         return new PriceMatches($subject, $result);
     }
 
+    private function detectWhitespaceFront(array $chars) : string
+    {
+        $space = '';
+
+        foreach ($chars as $char)
+        {
+            if(!ctype_space($char)) {
+                return $space;
+            }
+
+            $space .= $char;
+        }
+
+        return $space;
+    }
+
+    private function detectWhitespaceEnd(array $chars) : string
+    {
+        $spaces = array();
+
+        while(true)
+        {
+            $char = array_pop($chars);
+
+            if(ctype_space($char)) {
+                $spaces[] = $char;
+                continue;
+            }
+
+            break;
+        }
+
+        $spaces = array_reverse($spaces);
+
+        return implode('', $spaces);
+    }
+
     /**
      * Parses a single matched price.
      *
@@ -268,11 +305,11 @@ class PriceParser
     {
         $matchedText = str_replace(' ', ' ', $matchedText);
 
-        preg_match('/(\s*)(.*)(\s*)/', $matchedText, $result);
+        $chars = ConvertHelper::string2array($matchedText);
+        $spaceFront = $this->detectWhitespaceFront($chars);
+        $spaceEnd = $this->detectWhitespaceEnd($chars);
 
-        $spaceFront = $result[1];
-        $price = str_replace(' ', '', $result[2]);
-        $spaceEnd = $result[3];
+        $price = trim($matchedText);
 
         preg_match($this->compilePriceRegex(), $price, $result);
 
