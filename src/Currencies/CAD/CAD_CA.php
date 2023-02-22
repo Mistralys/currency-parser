@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Mistralys\CurrencyParser\Currencies\CAD;
 
 use Mistralys\CurrencyParser\BaseCurrencyLocale;
-use Mistralys\CurrencyParser\Currencies\USD;
+use Mistralys\CurrencyParser\Currencies\CAD;
 use Mistralys\CurrencyParser\PriceFormatter;
 
 /**
- * @property USD $currency
+ * @property CAD $currency
  */
 class CAD_CA extends BaseCurrencyLocale
 {
-    public function getCurrency(): USD
+    public function getCurrency(): CAD
     {
         return $this->currency;
     }
