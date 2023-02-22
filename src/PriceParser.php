@@ -266,6 +266,8 @@ class PriceParser
      */
     private function parseMatch(int $matchNumber, string $matchedText) : ?PriceMatch
     {
+        $matchedText = str_replace(' ', ' ', $matchedText);
+
         preg_match('/(\s*)(.*)(\s*)/', $matchedText, $result);
 
         $spaceFront = $result[1];
@@ -438,17 +440,17 @@ class PriceParser
             // 1. Currency symbol on front, e.g. "$40"
             '{SYMBOLS_FRONT}'.
             // 2 . Prefix space #1
-            '(\s*)'.
+            '([\s ]*)'.
             // 3. Minus sign, if present
             '(-?)'.
             // 4. Prefix space #2
-            '(\s*)'.
+            '([\s ]*)'.
             // 5. Currency symbol after minus sign, e.g. "-$40"
             '{SYMBOLS_AFTER_MINUS}'.
             // 6. Prefix space #3
-            '(\s*)'.
+            '([\s ]*)'.
             // 7. Number with spaces, commas or dots
-            '([\d,. ]+)?'.
+            '([\d,.  ]+)?'.
             // 8. Hyphen decimals
             '('.
                 '-'.
@@ -457,11 +459,11 @@ class PriceParser
                 '|'.
                 '&#8211;'.
             ')?'.
-            '\s*'.
+            '[\s ]*'.
             // 9. Currency symbol at the end, e.g. "40$"
             '{SYMBOLS_END}'.
             // 10. Suffix space
-            '(\s*)'.
+            '([\s ]*)'.
             // 11. French VAT, if present, e.g. "40€ TTC"
             '(TTC|HT)?';
 
