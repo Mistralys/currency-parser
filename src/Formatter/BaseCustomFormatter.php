@@ -114,6 +114,21 @@ abstract class BaseCustomFormatter extends PriceFormatter
         );
     }
 
+    public function setSymbolPositionBeforeMinus() : self
+    {
+        return $this->setSymbolPosition(self::SYMBOL_POSITION_BEFORE_MINUS);
+    }
+
+    public function setSymbolPositionAfterMinus() : self
+    {
+        return $this->setSymbolPosition(self::SYMBOL_POSITION_AFTER_MINUS);
+    }
+
+    public function setSymbolPositionAtTheEnd() : self
+    {
+        return $this->setSymbolPosition(self::SYMBOL_POSITION_END);
+    }
+
     /**
      * @param array<string,string> $styles Symbol position => space style pairs.
      * @return $this
