@@ -87,6 +87,11 @@ abstract class BaseCurrencyLocale
         return $this->currency;
     }
 
+    public function getCurrencyName() : string
+    {
+        return $this->getCurrency()->getName();
+    }
+
     abstract public function getDecimalSeparator() : string;
     abstract public function getThousandsSeparator() : string;
     abstract public function getArithmeticSeparator() : string;
@@ -117,33 +122,24 @@ abstract class BaseCurrencyLocale
         return PriceFormatter::createLocale($this);
     }
 
-    public function formatPriceString(string $price) : string
-    {
-        return $this->formatPrice(
-            PriceParser::create()
-                ->expectCurrency($this->getCurrency())
-                ->findPrices($price)
-                ->requireFirst()
-        );
-    }
-
-    /**
-     * @param PriceMatch $price
-     * @return string
-     * @throws CurrencyParserException
-     */
-    public function formatPrice(PriceMatch $price) : string
-    {
-        return $this->createFormatter()->formatPrice($price);
-    }
-
     public function createFilter() : PriceFilter
     {
         return PriceFilter::createForLocales($this);
     }
 
-    public function filterString(string $subject) : string
+    public function parsePrice(string $price) : PriceMatch
     {
-        return $this->createFilter()->filterString($subject);
+        return PriceParser::create()
+            ->expectCurrency($this)
+            ->findPrices($price)
+            ->requireFirst();
+    }
+
+    public function tryParsePrice(string $price) : ?PriceMatch
+    {
+        return PriceParser::create()
+            ->expectCurrency($this)
+            ->findPrices($price)
+            ->getFirst();
     }
 }
