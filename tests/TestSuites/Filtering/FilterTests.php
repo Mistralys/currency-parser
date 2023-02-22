@@ -23,15 +23,16 @@ Your price: EUR2500.01
 EOT;
 
         $expected = <<<'EOT'
-Starting price: 35&#160;€
-Black Friday rebate: 9,99&#160;€
-Your price: 2.500,01&#160;EUR
+Starting price: 35[SPACE]€
+Black Friday rebate: 9,99[SPACE]€
+Your price: 2.500,01[SPACE]EUR
 EOT;
 
         $this->assertSame(
             $expected,
             PriceFilter::createForLocales('EUR')
                 ->setDebugEnabled($this->isDebugEnabled())
+                ->setNonBreakingSpace('[SPACE]')
                 ->filterString($subject)
         );
     }
@@ -50,15 +51,16 @@ Your price: EUR2500.01
 EOT;
 
         $expected = <<<'EOT'
-Starting price: 35&#160;€
-Black Friday rebate: 9,99&#160;€
-Your price: 2&#160;500,01&#160;EUR
+Starting price: 35[SPACE]€
+Black Friday rebate: 9,99[SPACE]€
+Your price: 2[SPACE]500,01[SPACE]EUR
 EOT;
 
         $this->assertSame(
             $expected,
             PriceFilter::createForLocales('EUR_FR')
                 ->setDebugEnabled($this->isDebugEnabled())
+                ->setNonBreakingSpace('[SPACE]')
                 ->filterString($subject)
         );
     }
@@ -72,15 +74,16 @@ Your price: EUR2500.01
 EOT;
 
         $expected = <<<'EOT'
-Starting price: 35&#160;€
-Black Friday rebate: 9,99&#160;€
-Your price: 2&#160;500,01&#160;EUR
+Starting price: 35[SPACE]€
+Black Friday rebate: 9,99[SPACE]€
+Your price: 2[SPACE]500,01[SPACE]EUR
 EOT;
 
         $this->assertSame(
             $expected,
             PriceFilter::createForCountries('FR')
                 ->setDebugEnabled($this->isDebugEnabled())
+                ->setNonBreakingSpace('[SPACE]')
                 ->filterString($subject)
         );
     }

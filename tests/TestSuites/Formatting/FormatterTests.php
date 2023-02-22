@@ -20,12 +20,13 @@ final class FormatterTests extends CurrencyParserTestCase
         $this->assertNotNull($price);
 
         $this->assertSame(
-            'EUR&#160;-1&#160;000.00',
+            'EUR[SPACE]-1[SPACE]000.00',
             PriceFormatter::createCustom('.', ' ')
                 ->setSymbolPosition(PriceFormatter::SYMBOL_POSITION_BEFORE_MINUS)
                 ->setSymbolModeName()
                 ->setSymbolSpaceStyle(PriceFormatter::SYMBOL_POSITION_BEFORE_MINUS, PriceFormatter::SPACE_AFTER)
-                ->formatPrice($price)
+                ->setNonBreakingSpace('[SPACE]')
+                ->format($price)
         );
     }
 
@@ -40,9 +41,10 @@ final class FormatterTests extends CurrencyParserTestCase
         $this->assertNotNull($price);
 
         $this->assertSame(
-            '-&#160;1&#160;000,00&#160;€&#160;TTC',
+            '-[SPACE]1[SPACE]000,00[SPACE]€[SPACE]TTC',
             PriceFormatter::createLocale('EUR_FR')
-                ->formatPrice($price)
+                ->setNonBreakingSpace('[SPACE]')
+                ->format($price)
         );
     }
 
@@ -62,23 +64,26 @@ final class FormatterTests extends CurrencyParserTestCase
         $this->assertNotNull($price);
 
         $this->assertSame(
-            '-&#160;1&#160;000,00&#160;€&#160;TTC',
+            '-[SPACE]1[SPACE]000,00[SPACE]€[SPACE]TTC',
             PriceFormatter::createLocale('EUR_FR')
                 ->setSymbolModeSymbol()
-                ->formatPrice($price)
+                ->setNonBreakingSpace('[SPACE]')
+                ->format($price)
         );
     }
 
     public function test_priceFormatMethod() : void
     {
         $this->assertSame(
-            '-&#160;1&#160;000,00&#160;EUR&#160;TTC',
+            '-[SPACE]1[SPACE]000,00[SPACE]EUR[SPACE]TTC',
             $this
                 ->createTestParser()
-                ->expectCurrency('EUR')
+                ->expectCurrency('EUR_FR')
                 ->findPrices('-1,000.00 EUR TTC')
                 ->requireFirst()
-                ->format('EUR_FR')
+                ->createFormatter()
+                ->setNonBreakingSpace('[SPACE]')
+                ->format()
         );
     }
 }
