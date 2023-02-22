@@ -8,6 +8,7 @@ use AppLocalize\Localization;
 use AppLocalize\Localization_Country;
 use AppLocalize\Localization_Exception;
 use AppUtils\FileHelper\FileInfo;
+use AppUtils\FileHelper_Exception;
 use Mistralys\CurrencyParser\Formatter\PriceFormatterException;
 use Mistralys\CurrencyParser\Interfaces\NonBreakingSpaceInterface;
 use Mistralys\CurrencyParser\Interfaces\NonBreakingSpaceTrait;
@@ -83,7 +84,6 @@ class PriceFilter
      */
     public static function createForCountries(...$countries) : PriceFilter
     {
-        $collection = Currencies::getInstance();
         $filter = self::create();
 
         foreach($countries as $isoOrInstance)
@@ -94,7 +94,7 @@ class PriceFilter
                 $country = Localization::createCountry($isoOrInstance);
             }
 
-            $filter->setFormatterByLocale($collection->getLocaleByCountry($country));
+            $filter->setFormatterByCountry($country);
         }
 
         return $filter;
@@ -169,13 +169,13 @@ class PriceFilter
     /**
      * Checks whether a formatter has been set for the specified currency.
      *
-     * @param string|BaseCurrency $currencyNameOrInstance
+     * @param string|BaseCurrencyLocale $localeNameOrInstance
      * @return bool
      * @throws CurrencyParserException
      */
-    public function hasFormatter($currencyNameOrInstance) : bool
+    public function hasFormatter($localeNameOrInstance) : bool
     {
-        return $this->getFormatter($currencyNameOrInstance) !== null;
+        return $this->getFormatter($localeNameOrInstance) !== null;
     }
 
     // endregion
@@ -187,6 +187,14 @@ class PriceFilter
 
     // region: B - Filtering methods
 
+    /**
+     * @param FileInfo $file
+     * @return string
+     * @throws CurrencyParserException
+     * @throws PriceFilterException
+     * @throws PriceFormatterException
+     * @throws FileHelper_Exception
+     */
     public function filterFile(FileInfo $file) : string
     {
         return $this->filterString($file->getContents());
@@ -230,8 +238,8 @@ class PriceFilter
         $formatter = $this->getFormatter($currency);
 
         if($formatter === null) {
-            $formatter = PriceFormatter::createLocale($currency->getDefaultLocale());
-            $this->setFormatter($currency, $formatter);
+            $locale = $price->getLocale();
+            $this->setFormatter($locale, $locale->createFormatter());
         }
 
         // Pass on the settings that have been set for the filter
