@@ -1,7 +1,8 @@
 # Currency parser
 
-PHP library that can detect prices written in text or markup, and normalise 
-their formatting according to country-specific rules.
+PHP library that can detect prices written in text or markup, adding 
+non-breaking spaces, and normalising their formatting according to 
+country-specific rules.
 
 ## Requirements
 
@@ -63,10 +64,12 @@ foreach($prices as $price)
 
 ### Format a single price string
 
+Using auto-detection for all supported currencies:
+
 ```php
 use function Mistralys\CurrencyParser\parsePrice;
 
-echo parsePrice('$1000.00')->format();
+echo parsePrice('$1000.00')->formatText();
 ```
 
 Output:
@@ -74,28 +77,41 @@ Output:
 $1,000.00
 ```
 
-### Format all prices in a text or markup
-
-The following will automatically detect currencies,
-and format them according to the default currency locale.
-For USD, there is only a single locale, so confusion
-is impossible.
+With a specific currency locale for precise formatting when
+the currency is used in several countries, like the Euro:
 
 ```php
-use function Mistralys\CurrencyParser\filterString;
+use function Mistralys\CurrencyParser\parsePrice;
+
+echo parsePrice('1000.00 €', 'EUR_DE')->formatText();
+```
+
+Output:
+```
+1.000,00 €
+```
+
+### Format all prices in a text or markup
+
+The following will automatically format prices according to 
+the selected currencies' default locale.
+
+```php
+use Mistralys\CurrencyParser\PriceFilter;
 
 $subject = <<<'EOT' 
 Starting price: 1000.00 $
-Special price: 860.00 $
+Special price: € 860.00
 EOT;
 
-echo filterString($subject);
+echo PriceFilter::createForLocales('USD', 'EUR')
+    ->filterString($subject);
 ```
 
 Output:
 ```
 Starting price: $1,000.00
-Special price: $860.00
+Special price: 860.00 €
 ```
 
 To be more precise, the currency locale can be provided.
@@ -103,20 +119,46 @@ For example, Euros are formatted slightly differently in
 France than in the rest of Europe.
 
 ```php
-use function Mistralys\CurrencyParser\filterString;
+use Mistralys\CurrencyParser\PriceFilter;
 
 $subject = <<<'EOT' 
 Prix de départ: EUR 1000.00
 Prix spécial: EUR 860.00
 EOT;
 
-echo filterString($subject);
+echo PriceFilter::createForLocales('EUR_FR')
+    ->filterString($subject);
 ```
 
 Output:
 ```
-Prix de départ: 1 000,00 EUR
-Prix spécial: 860,00 EUR
+Prix de départ: 1 000,00 EUR
+Prix spécial: 860,00 EUR
+```
+
+### Add non-breaking spaces to prices
+
+When formatting prices, spaces automatically get replaced by non-breaking
+space characters for use in text documents. This can be easily switched to 
+an HTML context:
+
+```php
+use Mistralys\CurrencyParser\PriceFilter;
+
+$subject = <<<'EOT' 
+Starting price: 1000.00 $
+Special price: 860.00 $
+EOT;
+
+echo PriceFilter::createForLocales('USD')
+    ->setNonBreakingSpaceHTML()
+    ->filterString($subject)
+```
+
+Output:
+```
+Prix de départ: 1 000,00 EUR
+Prix spécial: 860,00 EUR
 ```
 
 ### Change the currency symbol style    
@@ -125,14 +167,52 @@ By default, the currency filter makes no changes to the currency symbols
 used in the document. This means that a mixed symbol usage will remain the
 same even after formatting the numbers.
 
-To change this, three options are available:
+#### Change to currency symbols
 
-- Change all to use currency symbols (`$`).
-- Change all to use currency names (`USD`).
-- Change all to use the currency's preferred style.
+```php
+use Mistralys\CurrencyParser\PriceFilter;
 
-Example with Euros: The preferred style is to use the currency symbol for
-prices instead of the name. 
+$subject = <<<'EOT'
+With name: USD 1000
+With symbol: $ 1000
+EOT;
+
+echo PriceFilter::createForLocales('USD')
+    ->setSymbolModeSymbol()
+    ->filterString($subject);
+```
+
+Output:
+```
+With name: $1,000
+With symbol: $1,000
+```
+
+#### Change to currency names
+
+```php
+use Mistralys\CurrencyParser\PriceFilter;
+
+$subject = <<<'EOT'
+With name: USD 1000
+With symbol: $ 1000
+EOT;
+
+echo PriceFilter::createForLocales('USD')
+    ->setSymbolModeSymbol()
+    ->filterString($subject);
+```
+
+Output:
+```
+With name: $1,000
+With symbol: $1,000
+```
+
+#### Change to country preferred style
+
+For the Euro, the preferred style is to use the currency symbol
+for prices instead of the name. 
 
 ```php
 use Mistralys\CurrencyParser\PriceFilter;
@@ -142,7 +222,6 @@ With name: EUR 1000
 With symbol: € 1000
 EOT;
 
-// Custom filter configuration, providing a currency locale
 echo PriceFilter::createForLocales('EUR_FR')
     ->setSymbolModePreferred()
     ->filterString($subject);
@@ -150,40 +229,78 @@ echo PriceFilter::createForLocales('EUR_FR')
 
 Output:
 ```
-With name: € 1 000
-With symbol: € 1 000
+With name: € 1 000
+With symbol: € 1 000
 ```
 
 ## Formatter usage
 
 ### What is the formatter?
 
-The formatter is used to format prices found in a text by the parser. It knows 
-how to format prices according to the bundled currency locales, like American
-or Mexican Dollars, or French Euros. It can also be customised to format prices 
-any way you like.
+The formatter is used to format individual prices found in a text by the parser. 
+It knows how to format prices according to the bundled currency locales, like 
+American or Mexican Dollars, or French Euros. It can also be customised to format 
+prices any way you like.
 
-### Formatting by locale
+> NOTE: To format multiple prices at once, look at the Price Filter.
 
+### Locale-based formatting
 
+Fire-and-forget formatting that uses the locale definitions.
 
 ```php
 use Mistralys\CurrencyParser\PriceFormatter;
-use Mistralys\CurrencyParser\PriceParser;
+use function Mistralys\CurrencyParser\parsePrice;
 
-// The formatter instance can be re-used as necessary
-$formatter = PriceFormatter::createForLocale('USD');
-
-// Get a price instance
-$price = PriceParser::create()
-    ->expectCurrency('USD')
-    ->findPrices('$1000.00')
-    ->getFirst();
-
-$formatted = $formatter->formatPrice($price);
-
-
+echo PriceFormatter::createLocale('USD')
+    ->format(parsePrice('$ 1000'))
 ```
+
+A locale formatter does not allow changing formatting details like the decimal
+separator. The symbol mode and space character can be adjusted, however:
+
+```php
+use Mistralys\CurrencyParser\PriceFormatter;
+use function Mistralys\CurrencyParser\parsePrice;
+
+echo PriceFormatter::createLocale('USD')
+    ->setNonBreakingSpaceHTML()
+    ->setSymbolModeName()
+    ->format(parsePrice('$ 1000'))
+```
+
+### Custom formatting
+
+Using a custom formatter, all formatting details can can be freely adjusted.
+
+```php
+use Mistralys\CurrencyParser\PriceFormatter;
+use function Mistralys\CurrencyParser\parsePrice;
+
+$formatter = PriceFormatter::createCustom()
+    ->setDecimalSeparator('[DECIMAL]')
+    ->setThousandsSeparator('[THOUSAND]')
+    ->setArithmeticSeparator('[ARITHMETIC]')
+    ->setNonBreakingSpace('[SPACE]')
+    ->setSymbolPosition(PriceFormatter::SYMBOL_POSITION_END)
+    ->setSymbolSpaceAtTheEnd(PriceFormatter::SPACE_BEFORE);
+
+echo $formatter->formatPrice(parsePrice('$ -1000.00'));
+```
+
+Output:
+```
+-[ARITHMETIC]1[THOUSAND]000[DECIMAL]00[SPACE]$
+```
+
+> NOTE: A formatter instance can be re-used as necessary.
+
+## Filter usage
+
+### What is the price filter?
+
+The Filter is used to format multiple prices in text or markup documents, 
+leaving the rest of the document intact.
 
 ## Parser usage
 
