@@ -169,25 +169,26 @@ class Currencies
 
     /**
      * @param string $searchTerm Can be a currency symbol, name or HTML entity.
-     * @param BaseCurrency[] $currencies List of currencies in which to search.
-     * @param array<string,string> $symbolDefaults List of symbol > currency name pairs to se the default currency to use for currencies that share the same symbol.
-     * @return BaseCurrency|NULL
-     * @throws CurrencyParserException
+     * @param array<string,BaseCurrencyLocale> $locales List of currency locales in which to search, keyed by currency name.
+     * @param array<string,string> $symbolDefaults List of symbol > currency locale ID pairs to se the default currency to use for currencies that share the same symbol.
+     * @return BaseCurrencyLocale|NULL
      */
-    public function autoDetect(string $searchTerm, array $currencies, array $symbolDefaults) : ?BaseCurrency
+    public function autoDetect(string $searchTerm, array $locales, array $symbolDefaults) : ?BaseCurrencyLocale
     {
         $symbolMatches = array();
 
-        foreach($currencies as $currency)
+        foreach($locales as $locale)
         {
+            $currency = $locale->getCurrency();
+
             if($currency->getName() === strtoupper($searchTerm))
             {
-                return $currency;
+                return $locale;
             }
 
             if($currency->getHTMLEntity() === $searchTerm)
             {
-                return $currency;
+                return $locale;
             }
 
             // There can be several currencies with the same symbol,
@@ -205,8 +206,8 @@ class Currencies
         {
             $name = $symbolDefaults[$searchTerm] ?? array_shift($symbolMatches);
 
-            if($this->nameExists($name)) {
-                return $this->getByName($name);
+            if(isset($locales[$name])) {
+                return $locales[$name];
             }
         }
 
@@ -308,5 +309,24 @@ class Currencies
         return $this
             ->getByName($country->getCurrency()->getISO())
             ->getLocaleByISO($country->getCode());
+    }
+
+    /**
+     * Retrieves a list of default currency locales for
+     * all available currencies.
+     *
+     * @return BaseCurrencyLocale[]
+     */
+    public function getDefaultLocales() : array
+    {
+        $currencies = $this->getAll();
+        $result = array();
+
+        foreach($currencies as $currency)
+        {
+            $result[] = $currency->getDefaultLocale();
+        }
+
+        return $result;
     }
 }
