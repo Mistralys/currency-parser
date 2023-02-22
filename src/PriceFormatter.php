@@ -4,15 +4,21 @@ declare(strict_types=1);
 
 namespace Mistralys\CurrencyParser;
 
-use Mistralys\CurrencyParser\Formatter\CustomFormatter;
-use Mistralys\CurrencyParser\Formatter\LocaleFormatter;
+use Mistralys\CurrencyParser\Formatter\ReusableCustomFormatter;
+use Mistralys\CurrencyParser\Formatter\ReusableLocaleFormatter;
+use Mistralys\CurrencyParser\Interfaces\NonBreakingSpaceInterface;
+use Mistralys\CurrencyParser\Interfaces\NonBreakingSpaceTrait;
 use Mistralys\CurrencyParser\Interfaces\SymbolModesInterface;
 use Mistralys\CurrencyParser\Interfaces\SymbolModesTrait;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
-abstract class PriceFormatter implements SymbolModesInterface
+abstract class PriceFormatter
+    implements
+    SymbolModesInterface,
+    NonBreakingSpaceInterface
 {
     use SymbolModesTrait;
+    use NonBreakingSpaceTrait;
 
     public const ERROR_INVALID_SYMBOL_POSITION = 129701;
 
@@ -29,24 +35,23 @@ abstract class PriceFormatter implements SymbolModesInterface
     public const SPACE_AFTER = 'after';
     public const SPACE_BEFORE = 'before';
 
-    protected string $nonBreakingSpace = '&#160;';
-    private PriceMatch $workPrice;
+    protected PriceMatch $workPrice;
 
     // region: A - Instance creation
 
-    public static function createCustom(?string $decimalSeparator=null, ?string $thousandsSeparator=null) : CustomFormatter
+    public static function createCustom(?string $decimalSeparator=null, ?string $thousandsSeparator=null) : ReusableCustomFormatter
     {
-        return new CustomFormatter($decimalSeparator, $thousandsSeparator);
+        return new ReusableCustomFormatter($decimalSeparator, $thousandsSeparator);
     }
 
     /**
      * @param string|BaseCurrencyLocale $nameOrInstance
-     * @return LocaleFormatter
+     * @return ReusableLocaleFormatter
      * @throws CurrencyParserException
      */
-    public static function createLocale($nameOrInstance) : LocaleFormatter
+    public static function createLocale($nameOrInstance) : ReusableLocaleFormatter
     {
-        return new LocaleFormatter(Currencies::getInstance()->getLocale($nameOrInstance));
+        return new ReusableLocaleFormatter(Currencies::getInstance()->getLocale($nameOrInstance));
     }
 
     // endregion
@@ -66,37 +71,22 @@ abstract class PriceFormatter implements SymbolModesInterface
      */
     abstract public function getSymbolSpaceStyles() : array;
 
-    public function getNonBreakingSpace(): string
-    {
-        return $this->nonBreakingSpace;
-    }
-
-    public function setNonBreakingSpace(string $nonBreakingSpace): self
-    {
-        $this->nonBreakingSpace = $nonBreakingSpace;
-        return $this;
-    }
-
-    public function formatPrice(PriceMatch $price) : string
-    {
-        $this->workPrice = $price;
-
-        $result = str_replace(
-            self::PLACEHOLDER_SPACE,
-            $this->nonBreakingSpace,
-            $this->render()
-        );
-
-        unset($this->workPrice);
-
-        return $result;
-    }
-
     // endregion
 
     // region: C - Rendering
 
-    private function render() : string
+    protected function _format(PriceMatch $price) : string
+    {
+        $this->workPrice = $price;
+
+        return str_replace(
+            self::PLACEHOLDER_SPACE,
+            $this->getNonBreakingSpace(),
+            $this->render()
+        );
+    }
+
+    protected function render() : string
     {
         return
             $this->workPrice->getSpaceFront().
