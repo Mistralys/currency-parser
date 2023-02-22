@@ -46,20 +46,20 @@ function findPrices(string $subject, ...$currencies) : PriceMatches
  * @throws PriceFormatterException
  * @throws PriceFilterException
  */
-function filterString(string $subject, ...$locales) : string
+function filterPrices(string $subject, ...$locales) : string
 {
     return PriceFilter::createForLocales(...$locales)->filterString($subject);
 }
 
 /**
  * @param string $price
- * @param $currency
+ * @param string|BaseCurrencyLocale|NULL $localeNameOrInstance
  * @return PriceMatch|null
  * @throws CurrencyParserException
  */
-function tryParsePrice(string $price, $currency=null) : ?PriceMatch
+function tryParsePrice(string $price, $localeNameOrInstance=null) : ?PriceMatch
 {
-    return PriceParser::tryParsePrice($price, $currency);
+    return PriceParser::tryParsePrice($price, $localeNameOrInstance);
 }
 
 /**
