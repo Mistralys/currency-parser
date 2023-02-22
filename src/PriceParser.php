@@ -17,7 +17,7 @@ class PriceParser
     private ?string $masterRegex = null;
     private ?string $priceRegex = null;
     /**
-     * @var BaseCurrency[]
+     * @var array<string,BaseCurrencyLocale>
      */
     private array $expected = array();
 
@@ -35,18 +35,18 @@ class PriceParser
      * Parses a single price string.
      *
      * @param string $price The price string to parse, e.g. "$50"
-     * @param string|BaseCurrency|NULL $currency
+     * @param string|BaseCurrencyLocale|NULL $localeNameOrInstance
      * @return PriceMatch|null The price match, or NULL if it could not be detected.
      * @throws CurrencyParserException
      */
-    public static function tryParsePrice(string $price, $currency=null) : ?PriceMatch
+    public static function tryParsePrice(string $price, $localeNameOrInstance=null) : ?PriceMatch
     {
         $parser = self::create();
 
-        if(empty($currency)) {
+        if(empty($localeNameOrInstance)) {
             $parser->expectAnyCurrency();
         } else {
-            $parser->expectCurrency($currency);
+            $parser->expectCurrency($localeNameOrInstance);
         }
 
         return $parser
@@ -56,18 +56,18 @@ class PriceParser
 
     /**
      * @param string $price
-     * @param string|BaseCurrency|NULL $currency
+     * @param string|BaseCurrencyLocale|NULL $localeNameOrInstance
      * @return PriceMatch
      * @throws CurrencyParserException
      */
-    public static function parsePrice(string $price, $currency=null) : PriceMatch
+    public static function parsePrice(string $price, $localeNameOrInstance=null) : PriceMatch
     {
         $parser = self::create();
 
-        if(empty($currency)) {
+        if(empty($localeNameOrInstance)) {
             $parser->expectAnyCurrency();
         } else {
-            $parser->expectCurrency($currency);
+            $parser->expectCurrency($localeNameOrInstance);
         }
 
         return $parser
@@ -82,15 +82,15 @@ class PriceParser
     }
 
     /**
-     * @param string|BaseCurrency $nameOrInstance
+     * @param string|BaseCurrencyLocale $nameOrInstance Locale name (EUR_FR), or currency locale instance.
      * @return $this
      * @throws CurrencyParserException
      */
     public function expectCurrency($nameOrInstance) : self
     {
-        $currency = $this->currencies->getCurrency($nameOrInstance);
+        $locale = $this->currencies->getLocale($nameOrInstance);
 
-        $this->expected[$currency->getName()] = $currency;
+        $this->expected[$locale->getCurrencyName()] = $locale;
 
         $this->resetRegexes();
 
@@ -98,7 +98,7 @@ class PriceParser
     }
 
     /**
-     * @param BaseCurrency|string ...$currencies
+     * @param BaseCurrencyLocale|string ...$currencies
      * @return $this
      * @throws CurrencyParserException
      */
@@ -112,9 +112,13 @@ class PriceParser
         return $this;
     }
 
+    /**
+     * @return $this
+     * @throws CurrencyParserException
+     */
     public function expectAnyCurrency() : self
     {
-        return $this->expectCurrencies(...Currencies::getInstance()->getAll());
+        return $this->expectCurrencies(...Currencies::getInstance()->getDefaultLocales());
     }
 
     /**
@@ -131,7 +135,7 @@ class PriceParser
      * symbol.
      *
      * @param string $symbol The currency symbol, e.g. "$"
-     * @param BaseCurrency|string $nameOrInstance The currency instance (or name) to use as default for the symbol (must use the same symbol).
+     * @param BaseCurrencyLocale|string $nameOrInstance The currency locale instance (or name) to use as default for the symbol (must use the same symbol).
      * @return $this
      * @throws CurrencyParserException
      */
@@ -139,9 +143,13 @@ class PriceParser
     {
         $collection = Currencies::getInstance();
 
-        $currency = $collection->getCurrency($nameOrInstance);
-
         $collection->requireSymbolExists($symbol);
+
+        $locale = $collection->getLocale($nameOrInstance);
+        $currency = $locale->getCurrency();
+
+        // Also add it to the list of expected currencies.
+        $this->expectCurrency($locale);
 
         if($currency->getSymbol() === $symbol) {
             $this->symbolDefaults[$symbol] = $currency->getName();
@@ -185,9 +193,9 @@ class PriceParser
     {
         $result = array();
 
-        foreach($this->expected as $currency)
+        foreach($this->expected as $locale)
         {
-            $result[] = $currency->getName();
+            $result[] = $locale->getCurrency()->getName();
         }
 
         return $result;
@@ -279,7 +287,7 @@ class PriceParser
             $currencySymbol = strtoupper($currencySymbol);
         }
 
-        $currencyInstance = $this->currencies->autoDetect(
+        $locale = $this->currencies->autoDetect(
             $currencySymbol,
             $this->expected,
             $this->symbolDefaults
@@ -289,7 +297,7 @@ class PriceParser
         // currency symbol: In theory, this cannot happen because
         // the regex only matches the expected currencies - but
         // this way the static code analysers are happy.
-        if($currencyInstance === null)
+        if($locale === null)
         {
             $this->debug('Match [#%s] | No currency instance found for symbol [%s].', $matchNumber, $currencySymbol);
             return null;
@@ -311,7 +319,7 @@ class PriceParser
         return new PriceMatch(
             $matchedText,
             $currencySymbol,
-            $currencyInstance,
+            $locale,
             $number['number'],
             $number['decimals'],
             $sign,
@@ -544,8 +552,10 @@ class PriceParser
         $names = array();
         $entities = array();
 
-        foreach($this->expected as $currency)
+        foreach($this->expected as $locale)
         {
+            $currency = $locale->getCurrency();
+
             $symbol = preg_quote($currency->getSymbol(), '/');
 
             if(!in_array($symbol, $symbols, true))

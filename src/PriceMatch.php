@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Mistralys\CurrencyParser;
 
+use Mistralys\CurrencyParser\Formatter\IndividualCustomFormatter;
+use Mistralys\CurrencyParser\Formatter\IndividualLocaleFormatter;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
 class PriceMatch
 {
-    private BaseCurrency $currency;
+    private BaseCurrencyLocale $locale;
     private int $number;
     private string $decimals;
     private string $sign;
@@ -18,11 +20,11 @@ class PriceMatch
     private string $matchedString;
     private string $currencySymbol;
 
-    public function __construct(string $matchedString, $currencySymbol, BaseCurrency $currency, int $number, string $decimals, string $sign, string $spaceFront='', string $spaceEnd='', string $vat='')
+    public function __construct(string $matchedString, $currencySymbol, BaseCurrencyLocale $locale, int $number, string $decimals, string $sign, string $spaceFront='', string $spaceEnd='', string $vat='')
     {
         $this->matchedString = $matchedString;
         $this->currencySymbol = $currencySymbol;
-        $this->currency = $currency;
+        $this->locale = $locale;
         $this->number = $number;
         $this->decimals = $decimals;
         $this->sign = $sign;
@@ -33,7 +35,12 @@ class PriceMatch
 
     public function getCurrency(): BaseCurrency
     {
-        return $this->currency;
+        return $this->locale->getCurrency();
+    }
+
+    public function getLocale() : BaseCurrencyLocale
+    {
+        return $this->locale;
     }
 
     public function getCurrencyName() : string
@@ -153,28 +160,58 @@ class PriceMatch
         return $this->matchedString;
     }
 
+    // region: Helper methods
+
     /**
-     * Formats the price using the currency's default locale.
+     * Formats the price with text-based non-breaking spaces.
      *
-     * @param string|BaseCurrencyLocale|NULL $localeNameOrInstance
      * @return string
      * @throws CurrencyParserException
      */
-    public function format($localeNameOrInstance=null) : string
+    public function formatText() : string
     {
-        if($localeNameOrInstance === null) {
-            $localeNameOrInstance = $this->currency->getDefaultLocale();
-        }
-
-        return currencyLocale($localeNameOrInstance)->formatPrice($this);
+        return $this->createFormatter()
+            ->setNonBreakingSpaceText()
+            ->format();
     }
 
-    public function createFilter($localeNameOrInstance=null) : PriceFilter
+    /**
+     * Formats the price
+     * @return string
+     * @throws CurrencyParserException
+     */
+    public function formatHTML() : string
     {
-        if($localeNameOrInstance === null) {
-            $localeNameOrInstance = $this->currency->getDefaultLocale();
-        }
-
-        return PriceFilter::createForLocales($localeNameOrInstance);
+        return $this->createFormatter()
+            ->setNonBreakingSpaceHTML()
+            ->format($this);
     }
+
+    /**
+     * Creates a formatter instance pre-configured for
+     * the price's currency locale.
+     *
+     * @return IndividualLocaleFormatter
+     */
+    public function createFormatter() : IndividualLocaleFormatter
+    {
+        return new IndividualLocaleFormatter($this);
+    }
+
+    /**
+     * Creates a customisable formatter for the price.
+     *
+     * @return IndividualCustomFormatter
+     */
+    public function createCustomFormatter() : IndividualCustomFormatter
+    {
+        return new IndividualCustomFormatter($this);
+    }
+
+    public function createFilter() : PriceFilter
+    {
+        return PriceFilter::createForLocales($this->locale);
+    }
+
+    // endregion
 }
