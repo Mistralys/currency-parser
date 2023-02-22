@@ -21,8 +21,10 @@ EOT;
             ->expectCurrency('USD')
             ->findPrices($subject);
 
+        $this->assertTrue($prices->hasMatches());
         $this->assertCount(3, $prices);
         $this->assertArrayHasKey(0, $prices);
+        $this->assertSame($subject, $prices->getSubject());
     }
 
     public function test_iterable() : void

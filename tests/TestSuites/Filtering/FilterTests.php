@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Mistralys\CurrencyParserTests\TestSuites\Formatting;
 
+use AppUtils\FileHelper\FileInfo;
 use Mistralys\CurrencyParser\PriceFilter;
 use Mistralys\CurrencyParserTests\TestClasses\CurrencyParserTestCase;
+use function Mistralys\CurrencyParser\currencyLocale;
 
 final class FilterTests extends CurrencyParserTestCase
 {
@@ -85,6 +87,39 @@ EOT;
                 ->setDebugEnabled($this->isDebugEnabled())
                 ->setNonBreakingSpace('[SPACE]')
                 ->filterString($subject)
+        );
+    }
+
+    public function test_filterNotHasFormatter() : void
+    {
+        $filter = PriceFilter::create();
+
+        $this->assertFalse($filter->hasFormatter('USD'));
+    }
+
+    public function test_filterHasFormatterWhenSet() : void
+    {
+        $filter = PriceFilter::create();
+
+        $filter->setFormatterByLocale('USD');
+
+        $this->assertTrue($filter->hasFormatter('USD'));
+    }
+
+    public function test_localeFilterHasFormatter() : void
+    {
+        $filter = currencyLocale('USD')->createFilter();
+
+        $this->assertTrue($filter->hasFormatter('USD'));
+    }
+
+    public function test_filterFile() : void
+    {
+        $this->assertSame(
+            PriceFilter::createForLocales('EUR_FR')
+                ->setNonBreakingSpace('[SPACE]')
+                ->filterFile(FileInfo::factory(__DIR__.'/../../files/test-text.txt')),
+            file_get_contents(__DIR__.'/../../files/test-text-expected.txt')
         );
     }
 }
