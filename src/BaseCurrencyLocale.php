@@ -7,6 +7,7 @@ namespace Mistralys\CurrencyParser;
 use AppLocalize\Localization;
 use AppLocalize\Localization_Country;
 use AppLocalize\Localization_Exception;
+use Mistralys\CurrencyParser\Formatter\ReusableLocaleFormatter;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
 abstract class BaseCurrencyLocale
@@ -98,6 +99,10 @@ abstract class BaseCurrencyLocale
     abstract public function getSymbolSeparator() : string;
     abstract public function getSymbolPosition() : string;
     abstract public function getPreferredSymbolType() : string;
+
+    /**
+     * @return array<string,string|NULL>
+     */
     abstract public function getSymbolSpaceStyles() : array;
 
     /**
@@ -114,10 +119,10 @@ abstract class BaseCurrencyLocale
     }
 
     /**
-     * @return PriceFormatter
+     * @return ReusableLocaleFormatter
      * @throws CurrencyParserException
      */
-    public function createFormatter() : PriceFormatter
+    public function createFormatter() : ReusableLocaleFormatter
     {
         return PriceFormatter::createLocale($this);
     }
@@ -127,6 +132,11 @@ abstract class BaseCurrencyLocale
         return PriceFilter::createForLocales($this);
     }
 
+    /**
+     * @param string $price
+     * @return PriceMatch
+     * @throws CurrencyParserException
+     */
     public function parsePrice(string $price) : PriceMatch
     {
         return PriceParser::create()

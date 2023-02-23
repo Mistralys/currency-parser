@@ -10,8 +10,11 @@ use AppLocalize\Localization_Exception;
 use AppUtils\FileHelper\FileInfo;
 use AppUtils\FileHelper_Exception;
 use Mistralys\CurrencyParser\Formatter\PriceFormatterException;
+use Mistralys\CurrencyParser\Formatter\ReusableCustomFormatter;
+use Mistralys\CurrencyParser\Formatter\ReusableLocaleFormatter;
 use Mistralys\CurrencyParser\Interfaces\NonBreakingSpaceInterface;
 use Mistralys\CurrencyParser\Interfaces\NonBreakingSpaceTrait;
+use Mistralys\CurrencyParser\Interfaces\ReusableFormatterInterface;
 use Mistralys\CurrencyParser\Interfaces\SymbolModesInterface;
 use Mistralys\CurrencyParser\Interfaces\SymbolModesTrait;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
@@ -25,7 +28,7 @@ class PriceFilter
     use NonBreakingSpaceTrait;
 
     /**
-     * @var PriceFormatter[]
+     * @var array<string,ReusableFormatterInterface>
      */
     private array $formatters = array();
 
@@ -140,14 +143,14 @@ class PriceFilter
      * NOTE: This is currency-locale-agnostic on purpose, so
      * custom formatters may be used for a currency.
      *
-     * @param string|BaseCurrencyLocale $nameOrInstance
-     * @param PriceFormatter $formatter
+     * @param string|BaseCurrencyLocale $localeNameOrInstance
+     * @param ReusableFormatterInterface $formatter
      * @return $this
      * @throws CurrencyParserException
      */
-    public function setFormatter($nameOrInstance, PriceFormatter $formatter) : self
+    public function setFormatter($localeNameOrInstance, ReusableFormatterInterface $formatter) : self
     {
-        $locale = Currencies::getInstance()->getLocale($nameOrInstance);
+        $locale = Currencies::getInstance()->getLocale($localeNameOrInstance);
 
         $this->parser->expectCurrency($locale);
         $this->formatters[$locale->getCurrency()->getName()] = $formatter;
@@ -155,15 +158,15 @@ class PriceFilter
     }
 
     /**
-     * @param string|BaseCurrency $currencyNameOrInstance
-     * @return PriceFormatter|null
+     * @param string|BaseCurrencyLocale $localeNameOrInstance
+     * @return ReusableFormatterInterface|null
      * @throws CurrencyParserException
      */
-    public function getFormatter($currencyNameOrInstance) : ?PriceFormatter
+    public function getFormatter($localeNameOrInstance) : ?ReusableFormatterInterface
     {
-        $currency = Currencies::getInstance()->getCurrency($currencyNameOrInstance);
+        $locale = Currencies::getInstance()->getLocale($localeNameOrInstance);
 
-        return $this->formatters[$currency->getName()] ?? null;
+        return $this->formatters[$locale->getCurrencyName()] ?? null;
     }
 
     /**
@@ -228,18 +231,18 @@ class PriceFilter
 
     /**
      * @param PriceMatch $price
-     * @return PriceFormatter
+     * @return ReusableFormatterInterface
      * @throws CurrencyParserException
      * @throws PriceFormatterException
      */
-    private function resolveFormatter(PriceMatch $price) : PriceFormatter
+    private function resolveFormatter(PriceMatch $price) : ReusableFormatterInterface
     {
-        $currency = $price->getCurrency();
-        $formatter = $this->getFormatter($currency);
+        $locale = $price->getLocale();
+        $formatter = $this->getFormatter($locale);
 
         if($formatter === null) {
-            $locale = $price->getLocale();
-            $this->setFormatter($locale, $locale->createFormatter());
+            $formatter = $locale->createFormatter();
+            $this->setFormatter($locale, $formatter);
         }
 
         // Pass on the settings that have been set for the filter

@@ -20,18 +20,18 @@ function currencyLocale($nameOrInstance) : BaseCurrencyLocale
  * Finds all written prices in the subject text or markup.
  *
  * @param string $subject
- * @param string|BaseCurrency ...$currencies
+ * @param string|BaseCurrencyLocale ...$locales
  * @return PriceMatches
  * @throws CurrencyParserException
  */
-function findPrices(string $subject, ...$currencies) : PriceMatches
+function findPrices(string $subject, ...$locales) : PriceMatches
 {
     $parser = PriceParser::create();
 
-    if(empty($currencies)) {
+    if(empty($locales)) {
         $parser->expectAnyCurrency();
     } else {
-         $parser->expectCurrencies(...$currencies);
+         $parser->expectCurrencies(...$locales);
     }
 
     return $parser->findPrices($subject);
@@ -49,12 +49,18 @@ function tryParsePrice(string $price, $localeNameOrInstance=null) : ?PriceMatch
 }
 
 /**
+ * Parses and returns a single price string.
+ *
+ * NOTE: Throws an exception if no price can be recognized.
+ * See {@see tryParsePrice()} as an alternative if unsure
+ * whether the string contains a valid price.
+ *
  * @param string $price
- * @param $currency
+ * @param string|BaseCurrencyLocale $localeNameOrInstance
  * @return PriceMatch
  * @throws CurrencyParserException
  */
-function parsePrice(string $price, $currency=null) : PriceMatch
+function parsePrice(string $price, $localeNameOrInstance=null) : PriceMatch
 {
-    return PriceParser::parsePrice($price, $currency);
+    return PriceParser::parsePrice($price, $localeNameOrInstance);
 }

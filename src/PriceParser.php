@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Mistralys\CurrencyParser;
 
 use AppUtils\ConvertHelper;
+use AppUtils\Interface_Stringable;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
 class PriceParser
@@ -189,6 +190,9 @@ class PriceParser
         );
     }
 
+    /**
+     * @return string[]
+     */
     protected function getExpectedCurrencyNames() : array
     {
         $result = array();
@@ -261,6 +265,10 @@ class PriceParser
         return new PriceMatches($subject, $result);
     }
 
+    /**
+     * @param string[] $chars
+     * @return string
+     */
     private function detectWhitespaceFront(array $chars) : string
     {
         $space = '';
@@ -277,6 +285,10 @@ class PriceParser
         return $space;
     }
 
+    /**
+     * @param string[] $chars
+     * @return string
+     */
     private function detectWhitespaceEnd(array $chars) : string
     {
         $spaces = array();
@@ -324,7 +336,7 @@ class PriceParser
 
         $sign = $result[1] ?? $result[3] ?? '';
         $currencySymbol = $result[2] ?? $result[4] ?? $result[7] ?? '';
-        $number = $this->parseNumber($result[5], $result[6]);
+        $number = $this->parseNumber((string)$result[5], $result[6]);
         $vat = $result[8] ?? '';
 
         // Fix the price name case
@@ -377,14 +389,14 @@ class PriceParser
     /**
      * Replaces all whitespace values with NULL in the array.
      *
-     * @param array<string,string> $values
-     * @return array<string,string|NULL>
+     * @param array<int,string> $values
+     * @return array<int,string|NULL>
      */
     private function nullifyEmpty(array $values) : array
     {
         foreach($values as $key => $value)
         {
-            if(empty(trim($value))) {
+            if(empty(trim((string)$value))) {
                 $values[$key] = null;
             }
         }
@@ -413,9 +425,9 @@ class PriceParser
      *
      * @param string $number
      * @param string|NULL $specialDecimals
-     * @return array{number:int,decimals:string,_normalized:string,_parts:array<int,string>}
+     * @return array{number:int,decimals:string,_normalized:string}
      */
-    private function parseNumber(string $number, ?string $specialDecimals) : ?array
+    private function parseNumber(string $number, ?string $specialDecimals) : array
     {
         $normalized = str_replace(array(',', '.', ' '), '_', trim($number));
         $parts = explode('_', $normalized);
@@ -437,7 +449,7 @@ class PriceParser
             return array(
                 'number' => (int)$decimals,
                 'decimals' => '',
-                'normalized' => $normalized
+                '_normalized' => $normalized
             );
         }
 
@@ -447,14 +459,14 @@ class PriceParser
             return array(
                 'number' => (int)implode('', $parts),
                 'decimals' => '',
-                'normalized' => $normalized
+                '_normalized' => $normalized
             );
         }
 
         return array(
             'number' => (int)implode('', $parts),
             'decimals' => $decimals,
-            'normalized' => $normalized
+            '_normalized' => $normalized
         );
     }
 
@@ -618,6 +630,11 @@ class PriceParser
         return implode('|', array_merge($symbols, $names, $entities));
     }
 
+    /**
+     * @param string $string
+     * @param int|string|Interface_Stringable|NULL ...$params
+     * @return void
+     */
     private function debug(string $string, ...$params) : void
     {
         if(!$this->debug) {

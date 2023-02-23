@@ -67,6 +67,10 @@ trait SymbolModesTrait
         return $this->setSymbolMode(SymbolModesInterface::SYMBOL_MODE_NAME);
     }
 
+    /**
+     * @return $this
+     * @throws PriceFormatterException
+     */
     public function setSymbolModePreferred() : self
     {
         return $this->setSymbolMode(SymbolModesInterface::SYMBOL_MODE_PREFERRED);

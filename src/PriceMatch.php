@@ -19,7 +19,17 @@ class PriceMatch
     private string $matchedString;
     private string $currencySymbol;
 
-    public function __construct(string $matchedString, $currencySymbol, BaseCurrencyLocale $locale, int $number, string $decimals, string $sign, string $spaceFront='', string $spaceEnd='', string $vat='')
+    public function __construct(
+        string $matchedString,
+        string $currencySymbol,
+        BaseCurrencyLocale $locale,
+        int $number,
+        string $decimals,
+        string $sign,
+        string $spaceFront='',
+        string $spaceEnd='',
+        string $vat=''
+    )
     {
         $this->matchedString = $matchedString;
         $this->currencySymbol = $currencySymbol;

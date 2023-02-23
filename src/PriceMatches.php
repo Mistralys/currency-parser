@@ -20,6 +20,7 @@ use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
  *
  * @package CurrencyParser
  * @implements ArrayAccess<int,PriceMatch>
+ * @implements Iterator<int,PriceMatch>
  */
 class PriceMatches implements ArrayAccess, Countable, Iterator
 {
@@ -106,11 +107,11 @@ class PriceMatches implements ArrayAccess, Countable, Iterator
 
     /**
      * @param int $offset
-     * @return PriceMatch|null
+     * @return PriceMatch
      */
-    public function offsetGet($offset) : ?PriceMatch
+    public function offsetGet($offset) : PriceMatch
     {
-        return $this->matches[$offset] ?? null;
+        return $this->matches[$offset];
     }
 
     /**
