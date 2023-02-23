@@ -65,7 +65,7 @@ final class CountrySpecificTests extends CurrencyParserTestCase
             )
         );
 
-        $this->enableDebug();
+        //$this->enableDebug();
 
         foreach($tests as $test)
         {
