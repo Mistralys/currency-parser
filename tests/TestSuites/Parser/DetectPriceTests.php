@@ -263,6 +263,24 @@ EOT;
         $this->assertSame('€', $price->getMatchedCurrencySymbol());
     }
 
+    /**
+     * Test for a case where a standalone currency name was falsely
+     * detected as a price, which caused PHP notices.
+     */
+    public function test_standaloneCurrencyName() : void
+    {
+        $subject = 'All prices mentioned are in Eur with VAT.';
+
+        $this->enableDebug();
+
+        $this->assertEmpty(
+            PriceParser::create()
+                ->setDebugEnabled($this->isDebugEnabled())
+                ->expectCurrency('EUR')
+                ->findPrices($subject)
+        );
+    }
+
     // endregion
 
     // region: Support methods
