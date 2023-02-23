@@ -16,6 +16,7 @@ abstract class BaseCurrency
 {
     public const ERROR_INVALID_LOCALE_INSTANCE = 127801;
     public const ERROR_CANNOT_LOAD_LOCALES = 127802;
+    public const ERROR_UNKNOWN_CURRENCY_ISO = 127803;
 
     private static ?string $referenceClass = null;
 
@@ -112,13 +113,32 @@ abstract class BaseCurrency
 
     /**
      * @param string $iso Country ISO code, case insensitive. Examples: "de", "FR".
-     * @return BaseCurrencyLocale|null
+     * @return BaseCurrencyLocale
+     * @throws CurrencyParserException
      */
-    public function getLocaleByISO(string $iso) : ?BaseCurrencyLocale
+    public function getLocaleByISO(string $iso) : BaseCurrencyLocale
     {
-        return $this->isoIndex[strtolower($iso)] ?? null;
+        $iso = strtolower($iso);
+
+        if(isset($this->isoIndex[$iso])) {
+            return $this->isoIndex[$iso];
+        }
+
+        throw new CurrencyParserException(
+            'Missing currency locale.',
+            sprintf(
+                'No locale available for country ISO [%s] in currency [%s].',
+                $iso,
+                $this->getName()
+            ),
+            self::ERROR_UNKNOWN_CURRENCY_ISO
+        );
     }
 
+    /**
+     * @return BaseCurrencyLocale
+     * @throws CurrencyParserException
+     */
     public function getDefaultLocale() : BaseCurrencyLocale
     {
         return $this->getLocaleByISO($this->getDefaultLocaleISO());
