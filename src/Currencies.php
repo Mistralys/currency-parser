@@ -200,7 +200,16 @@ class Currencies
         // currencies we found.
         if(!empty($symbolMatches))
         {
-            $name = $symbolDefaults[$searchTerm] ?? array_shift($symbolMatches);
+            // A single currency was matched, so no conflict exists,
+            // we simply use this one.
+            if(count($symbolMatches) === 1)
+            {
+                $name = array_shift($symbolMatches);
+            }
+            else
+            {
+                $name = $symbolDefaults[$searchTerm] ?? array_shift($symbolMatches);
+            }
 
             if(isset($locales[$name])) {
                 return $locales[$name];
