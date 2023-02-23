@@ -218,10 +218,12 @@ class PriceParser
         $regex = $this->compileMasterRegex();
 
         if($this->debug) {
-            $this->debug('Analysing text with a length of [%s] characters.', strlen($subject));
-            $this->debug('Using regex: %s', $regex);
+            $this->debug('------------------------------------------------------');
+            $this->debug('Find prices');
+            $this->debug('- Analysing text with a length of [%s] characters.', strlen($subject));
+            $this->debug('- Using regex: %s', $regex);
             $this->debug(
-                'Working with [%s] expected currencies: [%s].',
+                '- Working with [%s] expected currencies: [%s].',
                 count($this->expected),
                 implode(', ', $this->getExpectedCurrencyNames())
             );
@@ -236,6 +238,8 @@ class PriceParser
         );
 
         $matches = array_unique($result[0]);
+
+        $this->debug('- Regex found [%s] matches.', count($matches));
 
         $result = array();
         $matchNumber = 1;
@@ -304,6 +308,8 @@ class PriceParser
     private function parseMatch(int $matchNumber, string $matchedText) : ?PriceMatch
     {
         $matchedText = str_replace(' ', ' ', $matchedText);
+
+        $this->debug('Match [#%s] | Parsing match [%s]', $matchNumber, $matchedText);
 
         $chars = ConvertHelper::string2array($matchedText);
         $spaceFront = $this->detectWhitespaceFront($chars);
@@ -477,15 +483,15 @@ class PriceParser
             // 1. Currency symbol on front, e.g. "$40"
             '{SYMBOLS_FRONT}'.
             // 2 . Prefix space #1
-            '([\s ]*)'.
+            '{SPACE}'.
             // 3. Minus sign, if present
             '(-?)'.
             // 4. Prefix space #2
-            '([\s ]*)'.
+            '{SPACE}'.
             // 5. Currency symbol after minus sign, e.g. "-$40"
             '{SYMBOLS_AFTER_MINUS}'.
             // 6. Prefix space #3
-            '([\s ]*)'.
+            '{SPACE}'.
             // 7. Number with spaces, commas or dots
             '([\d,.  ]+)?'.
             // 8. Hyphen decimals
@@ -496,15 +502,16 @@ class PriceParser
                 '|'.
                 '&#8211;'.
             ')?'.
-            '[\s ]*'.
+            '{SPACE}'.
             // 9. Currency symbol at the end, e.g. "40$"
             '{SYMBOLS_END}'.
             // 10. Suffix space
-            '([\s ]*)'.
+            '{SPACE}'.
             // 11. French VAT, if present, e.g. "40€ TTC"
             '(TTC|HT)?';
 
-        $optional = '(\s*)';
+        $space = '[\s ]*';
+        $optional = $space;
         $mandatory = '('.$this->compileSymbolRegex().')';
 
         // Initially, all three symbol locations used optional
@@ -543,6 +550,8 @@ class PriceParser
         $switches = array();
         foreach($list as $label => $entry)
         {
+            $entry['{SPACE}'] = $space;
+
             $switches[] =
                 '(?# '.$label.')'.
                 str_replace(
@@ -569,7 +578,7 @@ class PriceParser
 
         $regex = sprintf(
              //        1     2     3    4       5        6   7      8
-            '/(-?)(%1$s)?(-?)(%1$s)?([0-9,. ]+)(-?)(%1$s)?(TTC|HT)?/i',
+            '/(-?)\s*(%1$s)?\s*(-?)\s*(%1$s)?\s*([0-9,. ]+)\s*(-?)\s*(%1$s)?\s*(TTC|HT)?/i',
             $this->compileSymbolRegex()
         );
 
