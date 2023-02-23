@@ -6,7 +6,7 @@ namespace Mistralys\CurrencyParser;
 
 use Mistralys\CurrencyParser\Formatter\ReusableCustomFormatter;
 use Mistralys\CurrencyParser\Formatter\ReusableLocaleFormatter;
-use Mistralys\CurrencyParser\Interfaces\NonBreakingSpaceInterface;
+use Mistralys\CurrencyParser\Interfaces\FormatterInterface;
 use Mistralys\CurrencyParser\Interfaces\NonBreakingSpaceTrait;
 use Mistralys\CurrencyParser\Interfaces\SymbolModesInterface;
 use Mistralys\CurrencyParser\Interfaces\SymbolModesTrait;
@@ -14,8 +14,7 @@ use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
 abstract class PriceFormatter
     implements
-    SymbolModesInterface,
-    NonBreakingSpaceInterface
+    FormatterInterface
 {
     use SymbolModesTrait;
     use NonBreakingSpaceTrait;
@@ -67,7 +66,7 @@ abstract class PriceFormatter
     abstract public function getSymbolPosition(): string;
 
     /**
-     * @return array<string,string>
+     * @return array<string,string|NULL>
      */
     abstract public function getSymbolSpaceStyles() : array;
 

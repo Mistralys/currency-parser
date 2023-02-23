@@ -15,6 +15,10 @@ abstract class BaseCustomFormatter extends PriceFormatter
     protected string $thousandsSeparator;
     protected string $arithmeticSeparator = '';
     protected string $symbolPosition = self::SYMBOL_POSITION_AFTER_MINUS;
+
+    /**
+     * @var array<string,string|NULL>
+     */
     protected array $symbolSpaceStyles = array(
         self::SYMBOL_POSITION_BEFORE_MINUS => null,
         self::SYMBOL_POSITION_AFTER_MINUS => null,
@@ -74,18 +78,29 @@ abstract class BaseCustomFormatter extends PriceFormatter
         return $this->symbolPosition;
     }
 
+    /**
+     * @param string $arithmeticSeparator
+     * @return $this
+     */
     public function setArithmeticSeparator(string $arithmeticSeparator): self
     {
         $this->arithmeticSeparator = $arithmeticSeparator;
         return $this;
     }
 
+    /**
+     * @param string $thousandsSeparator
+     * @return $this
+     */
     public function setThousandsSeparator(string $thousandsSeparator): self
     {
         $this->thousandsSeparator = $thousandsSeparator;
         return $this;
     }
 
+    /**
+     * @return array<string,string|NULL>
+     */
     public function getSymbolSpaceStyles(): array
     {
         return $this->symbolSpaceStyles;
@@ -114,23 +129,35 @@ abstract class BaseCustomFormatter extends PriceFormatter
         );
     }
 
+    /**
+     * @return $this
+     * @throws PriceFormatterException
+     */
     public function setSymbolPositionBeforeMinus() : self
     {
         return $this->setSymbolPosition(self::SYMBOL_POSITION_BEFORE_MINUS);
     }
 
+    /**
+     * @return $this
+     * @throws PriceFormatterException
+     */
     public function setSymbolPositionAfterMinus() : self
     {
         return $this->setSymbolPosition(self::SYMBOL_POSITION_AFTER_MINUS);
     }
 
+    /**
+     * @return $this
+     * @throws PriceFormatterException
+     */
     public function setSymbolPositionAtTheEnd() : self
     {
         return $this->setSymbolPosition(self::SYMBOL_POSITION_END);
     }
 
     /**
-     * @param array<string,string> $styles Symbol position => space style pairs.
+     * @param array<string,string|NULL> $styles Symbol position => space style pairs.
      * @return $this
      */
     public function setSymbolSpaceStyles(array $styles) : self
@@ -157,21 +184,37 @@ abstract class BaseCustomFormatter extends PriceFormatter
         return $this;
     }
 
+    /**
+     * @param string $style
+     * @return $this
+     */
     public function setSymbolSpaceBeforeMinus(string $style) : self
     {
         return $this->setSymbolSpaceStyle(self::SYMBOL_POSITION_BEFORE_MINUS, $style);
     }
 
+    /**
+     * @param string $style
+     * @return $this
+     */
     public function setSymbolSpaceAfterMinus(string $style) : self
     {
         return $this->setSymbolSpaceStyle(self::SYMBOL_POSITION_AFTER_MINUS, $style);
     }
 
+    /**
+     * @param string $style
+     * @return $this
+     */
     public function setSymbolSpaceAtTheEnd(string $style) : self
     {
         return $this->setSymbolSpaceStyle(self::SYMBOL_POSITION_END, $style);
     }
 
+    /**
+     * @param string $separator
+     * @return $this
+     */
     public function setDecimalSeparator(string $separator) : self
     {
         $this->decimalSeparator = $separator;

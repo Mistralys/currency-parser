@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Mistralys\CurrencyParser\Formatter;
 
+use Mistralys\CurrencyParser\Interfaces\IndividualFormatterInterface;
 use Mistralys\CurrencyParser\PriceMatch;
 
-class IndividualLocaleFormatter extends BaseLocaleFormatter
+class IndividualLocaleFormatter extends BaseLocaleFormatter implements IndividualFormatterInterface
 {
     public function __construct(PriceMatch $price)
     {
