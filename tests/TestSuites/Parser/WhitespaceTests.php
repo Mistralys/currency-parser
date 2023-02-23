@@ -26,7 +26,7 @@ EOT;
             ),
             array(
                 'front' => '[SPACE]',
-                'end' => '[LF]'
+                'end' => '[SPACE][SPACE][LF]'
             ),
             array(
                 'front' => '[SPACE][SPACE]',
