@@ -329,7 +329,15 @@ class PriceParser
 
         $price = trim($matchedText);
 
-        preg_match($this->compilePriceRegex(), $price, $result);
+        if(preg_match($this->compilePriceRegex(), $price, $result) === false) {
+            $this->debug('Match [#%s] | Ignoring, regex returned false.', $matchNumber);
+            return null;
+        }
+
+        if(empty($result)) {
+            $this->debug('Match [#%s] | Ignoring, regex result array is empty.', $matchNumber);
+            return null;
+        }
 
         // To facilitate finding the filled positions in the matches
         $result = $this->nullifyEmpty($result);
