@@ -1,3 +1,6 @@
+### v1.0.4 - Bugfix release
+- Parser: Fixed false positives detected in some cases ([#1](https://github.com/Mistralys/currency-parser/issues/1)).
+
 ### v1.0.3 - Bugfix release
 - Parser: Fixed standalone currency names causing PHP notices.
 
