@@ -18,14 +18,14 @@ final class DetectPriceTests extends CurrencyParserTestCase
      * To be able to detect prices, currencies must be added
      * to the expected currencies list.
      */
-    public function test_noExpectedCurrenciesAdded() : void
+    public function test_noExpectedCurrenciesAdded(): void
     {
         $this->expectExceptionCode(PriceParser::ERROR_NO_EXPECTED_CURRENCIES_SET);
 
         $this->createTestParser()->findPrices('Subject');
     }
 
-    public function test_parseTestString() : void
+    public function test_parseTestString(): void
     {
         //$this->enableDebug();
 
@@ -46,8 +46,7 @@ final class DetectPriceTests extends CurrencyParserTestCase
 
         $this->assertCount(7, $result);
 
-        foreach ($result as $idx => $match)
-        {
+        foreach ($result as $idx => $match) {
             $this->assertSame(
                 $expected[$idx],
                 $match->getAsFloat(),
@@ -56,7 +55,7 @@ final class DetectPriceTests extends CurrencyParserTestCase
         }
     }
 
-    public function test_frenchVAT() : void
+    public function test_frenchVAT(): void
     {
         $price = $this
             ->createTestParser()
@@ -68,7 +67,7 @@ final class DetectPriceTests extends CurrencyParserTestCase
         $this->assertSame('TTC', $price->getVAT());
     }
 
-    public function test_frenchVATCaseInsensitive() : void
+    public function test_frenchVATCaseInsensitive(): void
     {
         //$this->enableDebug();
 
@@ -82,7 +81,7 @@ final class DetectPriceTests extends CurrencyParserTestCase
         $this->assertSame('HT', $price->getVAT());
     }
 
-    public function test_multiplePricesWithName() : void
+    public function test_multiplePricesWithName(): void
     {
         $subject = <<<EOT
 Canadian dollars: CAD1,000
@@ -109,7 +108,7 @@ EOT;
      * This is handled by the property {@see PriceParser::$symbolDefaults},
      * which is passed on to {@see Currencies::autoDetect()}.
      */
-    public function test_multiplePricesWithSymbol() : void
+    public function test_multiplePricesWithSymbol(): void
     {
         $subject = <<<EOT
 Canadian dollars: $1,000
@@ -127,7 +126,7 @@ EOT;
         $this->assertSame('USD', $prices[0]->getCurrency()->getName());
     }
 
-    public function test_parseSupportedFormatsExample() : void
+    public function test_parseSupportedFormatsExample(): void
     {
         //$this->enableDebug();
 
@@ -204,10 +203,9 @@ EOT;
 
         $this->assertCount(count($expected), $result);
 
-        foreach ($result as $idx => $match)
-        {
-            $test = $expected[$idx+1];
-            $label = 'Match [#'.($idx+1).']: '.$match->getMatchedString();
+        foreach ($result as $idx => $match) {
+            $test = $expected[$idx + 1];
+            $label = 'Match [#' . ($idx + 1) . ']: ' . $match->getMatchedString();
 
             $this->assertSame(
                 $test['float'],
@@ -223,7 +221,7 @@ EOT;
         }
     }
 
-    public function test_parseDefaultSymbolExample() : void
+    public function test_parseDefaultSymbolExample(): void
     {
         $subject = <<<EOT
 Starting price: $35
@@ -243,7 +241,7 @@ EOT;
         $this->assertSame($prices[2]->getCurrencyName(), 'CAD');
     }
 
-    public function test_parseSinglePrice() : void
+    public function test_parseSinglePrice(): void
     {
         $price = PriceParser::tryParsePrice('$500');
 
@@ -254,7 +252,7 @@ EOT;
     /**
      * Parsing a price with non-breaking spaces must be possible.
      */
-    public function test_parseWithNonBreakingSpaces() : void
+    public function test_parseWithNonBreakingSpaces(): void
     {
         $price = PriceParser::parsePrice('€ 1 000,00 TTC');
 
@@ -267,11 +265,9 @@ EOT;
      * Test for a case where a standalone currency name was falsely
      * detected as a price, which caused PHP notices.
      */
-    public function test_standaloneCurrencyName() : void
+    public function test_standaloneCurrencyName(): void
     {
         $subject = 'All prices mentioned are in Eur with VAT.';
-
-        $this->enableDebug();
 
         $this->assertEmpty(
             PriceParser::create()
@@ -279,6 +275,37 @@ EOT;
                 ->expectCurrency('EUR')
                 ->findPrices($subject)
         );
+    }
+
+    /**
+     * @return void
+     * @see https://github.com/Mistralys/currency-parser/issues/1
+     */
+    public function test_bug1(): void
+    {
+        $subject = 'Vous devez gérer manuellement votre inscription auprès de chaque fournisseur.';
+
+        $this->assertCount(
+            0,
+            PriceParser::create()
+                ->setDebugEnabled($this->isDebugEnabled())
+                ->expectCurrency('EUR')
+                ->findPrices($subject)
+        );
+    }
+
+    public function test_onlyDecimals() : void
+    {
+        $subject = '.55 EUR';
+
+        $found = PriceParser::create()
+            ->setDebugEnabled($this->isDebugEnabled())
+            ->expectCurrency('EUR')
+            ->findPrices($subject)
+            ->getFirst();
+
+        $this->assertNotNull($found);
+        $this->assertSame(0.55, $found->getAsFloat());
     }
 
     // endregion
