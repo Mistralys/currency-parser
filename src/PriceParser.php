@@ -341,10 +341,16 @@ class PriceParser
 
         // To facilitate finding the filled positions in the matches
         $result = $this->nullifyEmpty($result);
+        $numberString = (string)$result[5];
+
+        if(!preg_match('/\d/', $numberString)) {
+            $this->debug('Match [#%s] | Ignoring, no numeric data found.', $matchNumber);
+            return null;
+        }
 
         $sign = $result[1] ?? $result[3] ?? '';
         $currencySymbol = $result[2] ?? $result[4] ?? $result[7] ?? '';
-        $number = $this->parseNumber((string)$result[5], $result[6]);
+        $number = $this->parseNumber($numberString, $result[6]);
         $vat = $result[8] ?? '';
 
         // Fix the price name case
