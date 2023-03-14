@@ -38,6 +38,7 @@ standalone text or scattered in a larger document.
 - `$ -1000` _Minus after symbol_
 - `50,- €` _German short style decimals_
 - `1 000,00 € TTC` _French style with VAT_
+- `.50 €` _Decimals only_
 
 > * Based on the assumption that prices always have
 > 1-2 decimal places.
