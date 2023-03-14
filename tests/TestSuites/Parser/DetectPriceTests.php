@@ -143,6 +143,7 @@ EOT;
 - `$ -1000` _Minus after symbol_
 - `50,- €` _German short style decimals_
 - `1 000,00 € TTC` _French style with VAT_
+- `.50 €` _Decimals only_
 EOT;
 
         $result = $this
@@ -198,6 +199,10 @@ EOT;
             12 => array(
                 'currency' => 'EUR',
                 'float' => 1000.00
+            ),
+            13 => array(
+                'currency' => 'EUR',
+                'float' => 0.50
             )
         );
 
