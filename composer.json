@@ -26,6 +26,7 @@
   "require": {
     "mistralys/application-utils": ">=2.2.7",
     "mistralys/application-localization": ">=1.4.1",
+    "mistralys/mailcode": ">=3.0.4",
     "php": ">=7.4"
   },
   "require-dev": {
