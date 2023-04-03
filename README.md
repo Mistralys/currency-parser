@@ -503,6 +503,55 @@ echo $prices[3]->getCurrencyName(); // CAD
 > it possible to distinguish between them. Only using currency names can solve such 
 > cases.
 
+## Mailcode compatibility
+
+The [Mailcode](https://github.com/Mistralys/mailcode) command preprocessor uses numbers
+as placeholders for commands when safeguarding them to apply formatting filters (more
+on the [reasoning behind this](https://github.com/Mistralys/mailcode#avoiding-delimiter-conflicts)). 
+This can cause placeholders of variable commands to be falsely recognized as prices.
+
+Example text with a variable command:
+
+```
+Price from a variable: {showvar: $FOO.PRICE} EUR
+```
+
+The `showvar` command is converted to a numeric placeholder by the safeguard feature:
+
+```
+Price from a variable: 9990000000001999 EUR
+```
+
+To avoid this being formatted into a price (and thus breaking the Mailcode command),
+simply enable the Mailcode support in the currency parser via the `expectMailcode()`
+method:
+
+```php
+use Mailcode\Mailcode;
+use Mistralys\CurrencyParser\PriceParser;
+use Mistralys\CurrencyParser\PriceFilter;
+
+$text = 'Price from a variable: {showvar: $FOO.PRICE} EUR';
+
+// Replace Mailcode commands with placeholders
+$safeguard = Mailcode::create()->createSafeguard($text);
+$safeText = $safeguard->makeSafe();
+
+$currencyParser = PriceParser::create()
+    ->expectCurrency('EUR')
+    ->expectMailcode();
+
+// Format all currencies in the text
+$formattedText = PriceFilter::create($currencyParser)
+    ->filterString($safeText);
+
+// Restore the Mailcode commands
+$filteredText = $safeguard->makeWhole($formattedText);
+```
+
+> NOTE: This will only work with the default Mailcode placeholder delimiters. 
+> Using a custom delimiter is not supported.
+
 ## Handling multi-currency documents
 
 In documents with multiple currencies, if they use the same symbol (USD and CAD
