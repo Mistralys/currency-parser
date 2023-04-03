@@ -1,3 +1,6 @@
+### v1.0.5 - Mailcode compatibility
+- Parser: Fixed Mailcode placeholders recognized as prices ([#2](https://github.com/Mistralys/currency-parser/issues/2)).
+
 ### v1.0.4 - Bugfix release
 - Parser: Fixed false positives detected in some cases ([#1](https://github.com/Mistralys/currency-parser/issues/1)).
 
