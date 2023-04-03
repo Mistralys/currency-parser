@@ -6,6 +6,8 @@ namespace Mistralys\CurrencyParser;
 
 use AppUtils\ConvertHelper;
 use AppUtils\Interface_Stringable;
+use Mailcode\Mailcode;
+use Mailcode\Mailcode_Parser_Safeguard;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
 class PriceParser
@@ -21,6 +23,9 @@ class PriceParser
      * @var array<string,BaseCurrencyLocale>
      */
     private array $expected = array();
+
+    private bool $mailcode = false;
+    private int $mailcodeDelimLength = 0;
 
     private function __construct()
     {
@@ -79,6 +84,12 @@ class PriceParser
     public function setDebugEnabled(bool $enabled) : self
     {
         $this->debug = $enabled;
+        return $this;
+    }
+
+    public function expectMailcode() : self
+    {
+        $this->mailcode = true;
         return $this;
     }
 
@@ -348,6 +359,11 @@ class PriceParser
             return null;
         }
 
+        if($this->mailcode === true && $this->isMailcodePlaceholder($numberString)) {
+            $this->debug('Match [#%s] | Ignoring, is a Mailcode placeholder.', $matchNumber);
+            return null;
+        }
+
         $sign = $result[1] ?? $result[3] ?? '';
         $currencySymbol = $result[2] ?? $result[4] ?? $result[7] ?? '';
         $number = $this->parseNumber($numberString, $result[6]);
@@ -397,6 +413,25 @@ class PriceParser
             $spaceFront,
             $spaceEnd,
             strtoupper($vat)
+        );
+    }
+
+    private function isMailcodePlaceholder(string $subject) : bool
+    {
+        if(!isset($this->mailcodeDelimiter)) {
+            $this->mailcodeDelimiter = Mailcode::create()->createSafeguard('')->getDelimiter();
+            $this->mailcodeDelimLength = strlen($this->mailcodeDelimiter);
+        }
+
+        $subject = trim($subject);
+        $pos = strpos($subject, $this->mailcodeDelimiter);
+
+        return !(
+            $pos === false
+            ||
+            $pos > 0
+            ||
+            substr($subject, $this->mailcodeDelimLength * -1, $this->mailcodeDelimLength) !== $this->mailcodeDelimiter
         );
     }
 
