@@ -10,8 +10,6 @@ use AppLocalize\Localization_Exception;
 use AppUtils\FileHelper\FileInfo;
 use AppUtils\FileHelper_Exception;
 use Mistralys\CurrencyParser\Formatter\PriceFormatterException;
-use Mistralys\CurrencyParser\Formatter\ReusableCustomFormatter;
-use Mistralys\CurrencyParser\Formatter\ReusableLocaleFormatter;
 use Mistralys\CurrencyParser\Interfaces\NonBreakingSpaceInterface;
 use Mistralys\CurrencyParser\Interfaces\NonBreakingSpaceTrait;
 use Mistralys\CurrencyParser\Interfaces\ReusableFormatterInterface;
