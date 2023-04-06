@@ -1,3 +1,7 @@
+### v1.0.6 - Euro name fix
+- Parser: Now ignoring the written "Euro" currency name.
+- Added reasoning behind ignoring "Euro" in the readme.
+
 ### v1.0.5 - Mailcode compatibility
 - Parser: Fixed Mailcode placeholders recognized as prices ([#2](https://github.com/Mistralys/currency-parser/issues/2)).
 
