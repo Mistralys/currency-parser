@@ -30,7 +30,7 @@ standalone text or scattered in a larger document.
 - `$1,000.00` _With thousands separators_ 
 - `$ 1 , 000 . 00` _Free-spacing, including newlines_
 - `$1.000,00` _Separator style agnostic_
-- `$1.000.00` _Yes, really*_
+- `$1.000.00` _Same separator mistake*_
 - `$1000.2` _1 to 2 decimal places_
 - `1000 EUR` _Currency symbols or names_
 - `EUR 1000` _Symbol placement agnostic_
@@ -41,7 +41,22 @@ standalone text or scattered in a larger document.
 - `.50 €` _Decimals only_
 
 > * Based on the assumption that prices always have
-> 1-2 decimal places.
+> 1-2 decimal places, this part of the number is 
+> assumed to be the decimals.
+
+### _Euro_ exception
+
+The _Euro_ is the only one of the supported currencies whose name begins
+with the same letters as its currency name, `EUR`. The parser will 
+ignore prices written like this:
+
+```
+"...and he gave him 42 Euro for his troubles."
+```
+
+The reasoning being that using this name is ambiguous in a pure currency
+context. It is typically used when mentioning prices in body text, where
+price formatting is not necessary or even expected. 
 
 ## Quick Start
 
