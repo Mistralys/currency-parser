@@ -126,6 +126,23 @@ EOT;
         $this->assertSame('USD', $prices[0]->getCurrency()->getName());
     }
 
+    /**
+     * Ensure that instances where "Euro" is written, it is
+     * not recognized as a currency. This is a special case
+     * because "Euro" starts with "EUR", the currency name,
+     * but is not supposed to be included.
+     */
+    public function test_euroWrittenLabel() : void
+    {
+        $prices = $this
+            ->createTestParser()
+            ->expectCurrency('EUR')
+            ->findPrices('42 Euro')
+            ->getAll();
+
+        $this->assertEmpty($prices);
+    }
+
     public function test_parseSupportedFormatsExample(): void
     {
         //$this->enableDebug();

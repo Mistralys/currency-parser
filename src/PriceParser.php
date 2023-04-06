@@ -369,6 +369,10 @@ class PriceParser
         $number = $this->parseNumber($numberString, $result[6]);
         $vat = $result[8] ?? '';
 
+        print_r(array(
+            'currency' => $currencySymbol
+        ));
+
         // Fix the price name case
         if(ctype_alpha($currencySymbol)) {
             $currencySymbol = strtoupper($currencySymbol);
@@ -672,7 +676,16 @@ class PriceParser
                 $symbols[] = $symbol;
             }
 
-            $names[] = $currency->getName();
+            // Fix for false "Euro" positives: this way of writing the currency
+            // name is too open to interpretation to be used for currency formatting,
+            // so we add it as a pseudo symbol. This way it is detected but ignored,
+            // because it is not a known currency symbol name.
+            $name = $currency->getName();
+            if($name === 'EUR') {
+                $names[] = 'Euro';
+            }
+
+            $names[] = $name;
             $entities[] = $currency->getHTMLEntity();
         }
 
