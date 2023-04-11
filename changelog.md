@@ -1,3 +1,6 @@
+### v1.0.7 - Fixed leftover debug output
+- Parser: Fixed a stray `print_r` not being tied to the debug setting (thanks @timsassen!).
+
 ### v1.0.6 - Euro name fix
 - Parser: Now ignoring the written "Euro" currency name.
 - Added reasoning behind ignoring "Euro" in the readme.
