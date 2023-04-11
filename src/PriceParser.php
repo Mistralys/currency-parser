@@ -369,9 +369,11 @@ class PriceParser
         $number = $this->parseNumber($numberString, $result[6]);
         $vat = $result[8] ?? '';
 
-        print_r(array(
-            'currency' => $currencySymbol
-        ));
+        if($this->debug) {
+            print_r([
+                'currency' => $currencySymbol
+            ]);
+        }
 
         // Fix the price name case
         if(ctype_alpha($currencySymbol)) {
