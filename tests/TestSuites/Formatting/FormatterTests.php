@@ -93,7 +93,7 @@ final class FormatterTests extends CurrencyParserTestCase
         $html = <<<'EOT'
 <p>Symbol on the wrong side: <strong>&#8364; 50</strong></p>
 <p>Name on the wrong side: <strong>EUR 50</strong></p>
-<p>Wrong thousands and decimal separators: <strong>1.000,00 &#8364;</strong></p>
+<p>Wrong thousands and decimal separators: <strong>1,000.00 &#8364;</strong></p>
 <p>No thousands separator: <strong>1000.00 &#8364;</strong></p>
 EOT;
 
