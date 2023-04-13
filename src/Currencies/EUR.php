@@ -10,7 +10,7 @@ class EUR extends BaseCurrency
 {
     public const CURRENCY_NAME = 'EUR';
     public const CURRENCY_SYMBOL = '€';
-    public const CURRENCY_ENTITY_NUMBER = 8211;
+    public const CURRENCY_ENTITY_NUMBER = 8364;
     public const CURRENCY_DEFAULT_ISO = 'EU';
 
     public function getName(): string
