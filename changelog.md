@@ -1,3 +1,6 @@
+### v1.0.8 - Fixed EUR HTML entity
+- Parser: Fixed wrong HTML entity number for the Euro symbol.
+
 ### v1.0.7 - Fixed leftover debug output
 - Parser: Fixed a stray `print_r` not being tied to the debug setting (thanks @timsassen!).
 
