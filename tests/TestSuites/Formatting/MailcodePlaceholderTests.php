@@ -12,6 +12,7 @@ class MailcodePlaceholderTests extends CurrencyParserTestCase
     private string $testText = <<<'EOT'
 A regular price: 45 EUR
 And a variable price: {showvar: $FOO.PRICE} EUR
+With a dot at the end: € {showvar: $FOO.PRICE}. Text after.
 EOT;
 
     /**
@@ -25,7 +26,6 @@ EOT;
         $safeguard = Mailcode::create()->createSafeguard($this->testText);
         $text = $safeguard->makeSafe();
 
-        echo $text;
         $prices = $this
             ->createTestParser()
             ->expectCurrency('EUR')
@@ -34,6 +34,5 @@ EOT;
             ->getAll();
 
         $this->assertCount(1, $prices);
-
     }
 }
