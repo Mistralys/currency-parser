@@ -25,7 +25,7 @@ class PriceParser
     private array $expected = array();
 
     private bool $mailcode = false;
-    private int $mailcodeDelimLength = 0;
+    private ?string $mailcodeRegex = null;
 
     private function __construct()
     {
@@ -424,21 +424,19 @@ class PriceParser
 
     private function isMailcodePlaceholder(string $subject) : bool
     {
-        if(!isset($this->mailcodeDelimiter)) {
-            $this->mailcodeDelimiter = Mailcode::create()->createSafeguard('')->getDelimiter();
-            $this->mailcodeDelimLength = strlen($this->mailcodeDelimiter);
+        if(!isset($this->mailcodeRegex))
+        {
+            // The Mailcode placeholders have a syntax like this:
+            // {DELIMITER}{NUMBERS X 10}{DELIMITER}
+            $this->mailcodeRegex = sprintf(
+                '/%1$s[0-9]{10}%1$s/',
+                preg_quote( Mailcode::create()->createSafeguard('')->getDelimiter(), '/')
+            );
         }
 
-        $subject = trim($subject);
-        $pos = strpos($subject, $this->mailcodeDelimiter);
+        $result = preg_match($this->mailcodeRegex, $subject);
 
-        return !(
-            $pos === false
-            ||
-            $pos > 0
-            ||
-            substr($subject, $this->mailcodeDelimLength * -1, $this->mailcodeDelimLength) !== $this->mailcodeDelimiter
-        );
+        return $result !== false && $result > 0;
     }
 
     /**
