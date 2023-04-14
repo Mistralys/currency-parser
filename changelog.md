@@ -1,3 +1,6 @@
+### v1.0.9 - Mailcode compatibility
+- Parser: Fixed special case where a Mailcode placeholder ends with a dot.
+
 ### v1.0.8 - Fixed EUR HTML entity
 - Parser: Fixed wrong HTML entity number for the Euro symbol.
 
