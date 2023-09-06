@@ -24,14 +24,14 @@
       ]
   },
   "require": {
-    "mistralys/application-utils": ">=2.2.7",
-    "mistralys/application-localization": ">=1.4.1",
-    "mistralys/mailcode": ">=3.0.4",
+    "mistralys/application-utils": ">=2.4",
+    "mistralys/application-localization": ">=1.4",
+    "mistralys/mailcode": ">=3.2",
     "php": ">=7.4"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",
-    "phpstan/phpstan": ">=1.9.2",
-    "phpunit/phpunit": ">=9.5.26"
+    "phpstan/phpstan": ">=1.10",
+    "phpunit/phpunit": ">=9.6"
   }
 }
