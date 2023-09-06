@@ -9,6 +9,7 @@ use AppUtils\Interface_Stringable;
 use Mailcode\Mailcode;
 use Mailcode\Mailcode_Parser_Safeguard;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
+use function AppUtils\parseVariable;
 
 class PriceParser
 {
@@ -366,14 +367,7 @@ class PriceParser
 
         $sign = $result[1] ?? $result[3] ?? '';
         $currencySymbol = $result[2] ?? $result[4] ?? $result[7] ?? '';
-        $number = $this->parseNumber($numberString, $result[6]);
         $vat = $result[8] ?? '';
-
-        if($this->debug) {
-            print_r([
-                'currency' => $currencySymbol
-            ]);
-        }
 
         // Fix the price name case
         if(ctype_alpha($currencySymbol)) {
@@ -396,6 +390,8 @@ class PriceParser
             return null;
         }
 
+        $number = $this->parseNumber($numberString, $result[6], $locale);
+
         if($this->debug) {
             print_r(array(
                 'matchedText' => $matchedText,
@@ -407,6 +403,10 @@ class PriceParser
                 'spaceEnd' => ConvertHelper::hidden2visible($spaceEnd),
                 'matches' => $result
             ));
+        }
+
+        if($number === null) {
+            return null;
         }
 
         return new PriceMatch(
@@ -478,11 +478,130 @@ class PriceParser
      *
      * @param string $number
      * @param string|NULL $specialDecimals
-     * @return array{number:int,decimals:string,_normalized:string}
+     * @return array{number:int|null,decimals:string,_normalized:string}|NULL
      */
-    private function parseNumber(string $number, ?string $specialDecimals) : array
+    private function parseNumber(string $number, ?string $specialDecimals, BaseCurrencyLocale $locale) : ?array
     {
-        $normalized = str_replace(array(',', '.', ' '), '_', trim($number));
+        $number = trim($number);
+
+        // Special case: the number starts with a dot or comma,
+        // which means an implied 0. Examples: "$.50" or "$,50"
+        if($number[0] === '.' || $number[0] === ',')
+        {
+            $this->debug('ParseNumber | Implied 0-based value with decimals.');
+
+            $normalized = ltrim($number, '.,');
+
+            return array(
+                'number' => null,
+                'decimals' => $specialDecimals ?? $normalized,
+                '_normalized' => $normalized
+            );
+        }
+
+        $normalized = str_replace(array(',', '.', ' '), '_', $number);
+        $parts = explode('_', $normalized);
+        $start = substr($number, 0, 2);
+
+        // Special case: "0.421" notation, but with a decimal
+        // separator that does not match the currency's. As this
+        // is pretty clean cut, we can use the value.
+        if($start === '0,' || $start === '0.')
+        {
+            if(count($parts) === 2)
+            {
+                $this->debug('ParseNumber | 0-based value with decimals.');
+                return array(
+                    'number' => 0,
+                    'decimals' => $parts[1],
+                    '_normalized' =>  $normalized
+                );
+            }
+
+            // More commas or dots is definitely not a valid number we can work with.
+            return null;
+        }
+
+        $decimalSep = $locale->getDecimalSeparator();
+        $thousandsSep = $locale->getThousandsSeparator();
+        $hasDot = strpos($number, '.') !== false;
+        $hasComma = strpos($number, ',') !== false;
+        $alternateDecimalSep = '.';
+        if($decimalSep === '.') {
+            $alternateDecimalSep = ',';
+        }
+
+
+        $hasDecimals = null;
+
+        // Number has both comma and dot: We can uniquely identify decimals.
+        // without using the locale, which is more tolerant with separator mix-ups.
+        if($hasDot && $hasComma)
+        {
+            $decimals = array_pop($parts);
+            $value = implode('', $parts);
+
+            $this->debug('ParseNumber | Detected mixed separators.');
+
+            return array(
+                'number' => (int)$value,
+                'decimals' => $specialDecimals ?? $decimals,
+                '_normalized' => $normalized
+            );
+        }
+
+        // Go through the parts and attempt to identify the structure
+        foreach($parts as $part)
+        {
+
+        }
+
+        $normalized = $number;
+
+            $this->debug('ParseNumber | Attempting locale decimal detection.');
+            $this->debug('ParseNumber | Locale [%s] has decimal separator [%s] and thousands separator [%s].', $locale->getID(), $decimalSep, $thousandsSep);
+
+            // We found the decimal separator defined for the locale:
+            // We have to assume that this is correct.
+            if(strpos($number, $decimalSep) !== false)
+            {
+                $this->debug('ParseNumber | Decimal separator found.');
+
+                $hasDecimals = true;
+
+                // Remove all separators except the decimal one
+                $normalized = str_replace($decimalSep, '{DEC}', $number);
+                $normalized = str_replace(array(',', '.', ' '), '', $normalized);
+                $normalized = str_replace('{DEC}', '_', $normalized);
+            }
+            else
+            {
+
+
+                $clean = $normalized;
+
+                // Remove the thousands separator
+                if(strpos($number, $thousandsSep) !== false)
+                {
+
+                    $clean = str_replace($thousandsSep, '', $normalized);
+                }
+
+                // We have no separators left, so we're confident there are no decimals.
+                if(strpos($clean, '.') === false && strpos($clean, ',') === false)
+                {
+                    $hasDecimals = false;
+                }
+                else
+                {
+                    return null;
+                }
+
+                $this->debug('ParseNumber | Decimal separator not found.');
+
+                $normalized = str_replace(array(',', '.', ' '), '_', $clean);
+            }
+
         $parts = explode('_', $normalized);
 
         // Decimals is a hyphen (german style)
@@ -498,26 +617,41 @@ class PriceParser
         $decimals = array_pop($parts);
 
         // Number without decimals, e.g. 50
-        if(empty($parts)) {
+        if(empty($parts))
+        {
+            print_r(array(
+                'number' => $number,
+                'hasDecimals' => parseVariable($hasDecimals)->enableType()->toString(),
+                'decimals' => $decimals,
+                'parts' => $parts,
+                'normalized' => $normalized
+            ));
+
+            if(!$hasDecimals) {
+                $this->debug('ParseNumber | Number without decimals.');
+
+                return array(
+                    'number' => (int)$decimals,
+                    'decimals' => '',
+                    '_normalized' => $normalized
+                );
+            }
+
+            $this->debug('ParseNumber | Number with only decimals.');
+
             return array(
-                'number' => (int)$decimals,
-                'decimals' => '',
+                'number' => null,
+                'decimals' => $decimals,
                 '_normalized' => $normalized
             );
         }
 
-        // Decimals are in fact thousands in a large number like 100,000
-        if(strlen($decimals) === 3) {
-            $parts[] = $decimals;
-            return array(
-                'number' => (int)implode('', $parts),
-                'decimals' => '',
-                '_normalized' => $normalized
-            );
-        }
+        $this->debug('Full number with value and decimals.');
+
+        $value = implode('', $parts);
 
         return array(
-            'number' => (int)implode('', $parts),
+            'number' => (int)$value,
             'decimals' => $decimals,
             '_normalized' => $normalized
         );

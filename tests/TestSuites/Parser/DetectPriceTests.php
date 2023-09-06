@@ -27,7 +27,7 @@ final class DetectPriceTests extends CurrencyParserTestCase
 
     public function test_parseTestString(): void
     {
-        //$this->enableDebug();
+        $this->enableDebug();
 
         $result = $this
             ->createTestParser()
@@ -148,20 +148,28 @@ EOT;
         //$this->enableDebug();
 
         $string = <<<'EOT'
-- `$1000`
-- `$1,000.00` _With thousands separators_ 
-- `$ 1 , 000 . 00` _Free-spacing, including newlines_
-- `$1.000,00` _Separator style agnostic_
-- `$1.000.00` _Yes, really*_
-- `$1000.2` _1 to 2 decimal places_
-- `1000 EUR` _Currency symbols or names_
-- `EUR 1000` _Symbol placement agnostic_
-- `-$ 1000` _Minus before symbol_
-- `$ -1000` _Minus after symbol_
-- `50,- €` _German short style decimals_
-- `1 000,00 € TTC` _French style with VAT_
-- `.50 €` _Decimals only_
+- `$1000` (1)
+- `$1,000.00` _With thousands separators_ (2) 
+- `$ 1 , 000 . 00` _Free-spacing, including newlines_ (3)
+- `$1.000,00` _Separator style agnostic_ (4)
+- `$1.000.00` _Yes, really*_ (5)
+- `$1000.2` _1 to 2 decimal places_ (6)
+- `1000 EUR` _Currency symbols or names_ (7)
+- `EUR 1000` _Symbol placement agnostic_ (8)
+- `-$ 1000` _Minus before symbol_ (9)
+- `$ -1000` _Minus after symbol_ (10)
+- `50,- €` _German short style decimals_ (11)
+- `1 000,00 € TTC` _French style with VAT_ (12)
+- `.50 €` _Decimals only, wrong decimal separator_ (13)
+- `,50 €` _Decimals only, correct decimal separator_ (14)
+- `$0.011` _Three decimals` (15)
+- `$0.0111` _Four decimals` (16)
+- `$1,000 _Only thousands separator_ (17)`
+- `$0,542 _With zero value it can be recognized_ (18)`
+- `$0,542,000 _Should not be detected_
 EOT;
+
+        $this->enableDebug();
 
         $result = $this
             ->createTestParser()
@@ -220,6 +228,26 @@ EOT;
             13 => array(
                 'currency' => 'EUR',
                 'float' => 0.50
+            ),
+            14 => array(
+                'currency' => 'EUR',
+                'float' => 0.50
+            ),
+            15 => array(
+                'currency' => 'USD',
+                'float' => 0.011
+            ),
+            16 => array(
+                'currency' => 'USD',
+                'float' => 0.0111
+            ),
+            17 => array(
+                'currency' => 'USD',
+                'float' => 1000.00
+            ),
+            18 => array(
+                'currency' => 'USD',
+                'float' => 0.542
             )
         );
 

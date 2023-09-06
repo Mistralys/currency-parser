@@ -10,7 +10,7 @@ use Mistralys\CurrencyParser\Formatter\IndividualLocaleFormatter;
 class PriceMatch
 {
     private BaseCurrencyLocale $locale;
-    private int $number;
+    private ?int $number;
     private string $decimals;
     private string $sign;
     private string $vat;
@@ -23,7 +23,7 @@ class PriceMatch
         string $matchedString,
         string $currencySymbol,
         BaseCurrencyLocale $locale,
-        int $number,
+        ?int $number,
         string $decimals,
         string $sign,
         string $spaceFront='',
@@ -64,7 +64,12 @@ class PriceMatch
 
     public function getNumber() : int
     {
-        return $this->number;
+        return (int)$this->number;
+    }
+
+    public function hasNumber() : bool
+    {
+        return isset($this->number);
     }
 
     /**
