@@ -1,3 +1,6 @@
+### v1.0.10 - Mailcode update
+- Dependencies: Updated Mailcode to [v3.2.0](https://github.com/Mistralys/mailcode/releases/tag/3.2.0).
+
 ### v1.0.9 - Mailcode compatibility
 - Parser: Fixed special case where a Mailcode placeholder ends with a dot.
 
