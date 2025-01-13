@@ -330,7 +330,15 @@ class PriceParser
      */
     private function parseMatch(int $matchNumber, string $matchedText) : ?PriceMatch
     {
-        $matchedText = str_replace(' ', ' ', $matchedText);
+        $nonStandardWhitespace = [
+            ' ', // Non-breaking space
+            ' ', // Narrow no-break space
+            ' ', // Thin space
+            ' ', // Hair space
+            ' ', // Punctuation space
+        ];
+
+        $matchedText = str_replace($nonStandardWhitespace, ' ', $matchedText);
 
         $this->debug('Match [#%s] | Parsing match [%s]', $matchNumber, $matchedText);
 
