@@ -41,10 +41,11 @@ final class DetectPriceTests extends CurrencyParserTestCase
             42.12,
             15.00,
             500.00,
-            9.00
+            9.00,
+            18.25
         );
 
-        $this->assertCount(7, $result);
+        $this->assertCount(8, $result);
 
         foreach ($result as $idx => $match) {
             $this->assertSame(
@@ -344,6 +345,7 @@ EOT;
 15,-EUR
 EUR 500 TTC
 €9
+€ 18.25
 EOT;
 
     // endregion
