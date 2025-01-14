@@ -1,3 +1,7 @@
+### v1.0.11 - Support non-standard spaces
+- Merged pull request [#5](https://github.com/Mistralys/currency-parser/pull/5), thanks @daun!
+- Parser: Prices formatted with non-standard spaces are now recognized.
+
 ### v1.0.10 - Mailcode update
 - Dependencies: Updated Mailcode to [v3.2.0](https://github.com/Mistralys/mailcode/releases/tag/3.2.0).
 
