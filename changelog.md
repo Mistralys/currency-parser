@@ -1,3 +1,16 @@
+### v1.1.0 - Mailcode and Localization update (Breaking-L)
+- Localization: Updated references to classes refactored in AppLocalize.
+- Dependencies: Updated AppLocalize to [v1.5.0](https://github.com/Mistralys/application-localization/releases/tag/1.5.0).
+- Dependencies: Updated Mailcode to [v3.5.0](https://github.com/Mistralys/mailcode/releases/tag/3.5.0).
+
+#### Breaking changes
+
+- Currency locale: `getCountry()` now returns `CountryInterface`.
+- Currencies: `getLocaleByCountry()` now requires a `CountryInterface` instance.
+- Price filters: `setFormatterByCountry()` now requires a `CountryInterface` instance.
+- Breaking changes in AppLocalize (see [changelog](https://github.com/Mistralys/application-localization/releases/tag/1.5.0)).
+- Breaking changes in Mailcode (see [changelog](https://github.com/Mistralys/mailcode/releases/tag/3.5.0)).
+
 ### v1.0.10 - Mailcode update
 - Dependencies: Updated Mailcode to [v3.2.0](https://github.com/Mistralys/mailcode/releases/tag/3.2.0).
 
