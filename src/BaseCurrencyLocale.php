@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Mistralys\CurrencyParser;
 
 use AppLocalize\Localization;
-use AppLocalize\Localization_Country;
+use AppLocalize\Localization\Countries\CountryInterface;
 use AppLocalize\Localization_Exception;
 use Mistralys\CurrencyParser\Formatter\ReusableLocaleFormatter;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
@@ -20,7 +20,7 @@ abstract class BaseCurrencyLocale
     protected BaseCurrency $currency;
     private string $iso;
     private string $id;
-    private Localization_Country $country;
+    private CountryInterface $country;
 
     /**
      * Country ISO mappings for special cases.
@@ -53,7 +53,7 @@ abstract class BaseCurrencyLocale
                 $iso = $this->isoAliases[$iso];
             }
 
-            $this->country = Localization::createCountry($iso);
+            $this->country = Localization::createCountries()->getByISO($iso);
         }
         catch (Localization_Exception $e)
         {
@@ -113,7 +113,7 @@ abstract class BaseCurrencyLocale
         return $this->iso;
     }
 
-    public function getCountry() : Localization_Country
+    public function getCountry() : CountryInterface
     {
         return $this->country;
     }

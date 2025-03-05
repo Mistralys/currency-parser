@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Mistralys\CurrencyParser;
 
-use AppLocalize\Localization_Country;
+use AppLocalize\Localization\Countries\CountryInterface;
 use AppUtils\ClassHelper;
 use AppUtils\ClassHelper\BaseClassHelperException;
 use AppUtils\FileHelper;
@@ -305,11 +305,11 @@ class Currencies
     /**
      * Gets the currency locale matching the specified country.
      *
-     * @param Localization_Country $country
+     * @param CountryInterface $country
      * @return BaseCurrencyLocale
      * @throws CurrencyParserException
      */
-    public function getLocaleByCountry(Localization_Country $country) : BaseCurrencyLocale
+    public function getLocaleByCountry(CountryInterface $country) : BaseCurrencyLocale
     {
         return $this
             ->getByName($country->getCurrency()->getISO())

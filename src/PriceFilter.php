@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Mistralys\CurrencyParser;
 
 use AppLocalize\Localization;
-use AppLocalize\Localization_Country;
+use AppLocalize\Localization\Countries\CountryInterface;
 use AppLocalize\Localization_Exception;
 use AppUtils\FileHelper\FileInfo;
 use AppUtils\FileHelper_Exception;
@@ -77,7 +77,7 @@ class PriceFilter
      * Creates a filter and configures currency locales for the
      * specified countries.
      *
-     * @param string|Localization_Country ...$countries
+     * @param string|CountryInterface ...$countries
      * @return PriceFilter
      * @throws CurrencyParserException
      * @throws PriceFormatterException
@@ -89,10 +89,10 @@ class PriceFilter
 
         foreach($countries as $isoOrInstance)
         {
-            if($isoOrInstance instanceof Localization_Country) {
+            if($isoOrInstance instanceof CountryInterface) {
                 $country = $isoOrInstance;
             } else {
-                $country = Localization::createCountry($isoOrInstance);
+                $country = Localization::createCountries()->getByISO($isoOrInstance);
             }
 
             $filter->setFormatterByCountry($country);
@@ -125,12 +125,12 @@ class PriceFilter
      * Sets a currency locale formatter using the specified
      * country instance.
      *
-     * @param Localization_Country $country
+     * @param CountryInterface $country
      * @return $this
      * @throws CurrencyParserException
      * @throws PriceFormatterException
      */
-    public function setFormatterByCountry(Localization_Country $country) : self
+    public function setFormatterByCountry(CountryInterface $country) : self
     {
         return $this->setFormatterByLocale(Currencies::getInstance()->getLocaleByCountry($country));
     }
