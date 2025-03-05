@@ -11,6 +11,10 @@
 - Breaking changes in AppLocalize (see [changelog](https://github.com/Mistralys/application-localization/releases/tag/1.5.0)).
 - Breaking changes in Mailcode (see [changelog](https://github.com/Mistralys/mailcode/releases/tag/3.5.0)).
 
+### v1.0.11 - Support non-standard spaces
+- Merged pull request [#5](https://github.com/Mistralys/currency-parser/pull/5), thanks @daun!
+- Parser: Prices formatted with non-standard spaces are now recognized.
+
 ### v1.0.10 - Mailcode update
 - Dependencies: Updated Mailcode to [v3.2.0](https://github.com/Mistralys/mailcode/releases/tag/3.2.0).
 
