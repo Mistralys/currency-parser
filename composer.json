@@ -25,9 +25,9 @@
   },
   "require": {
     "mistralys/application-utils": ">=2.4.0",
-    "mistralys/application-localization": "^1.5.0",
+    "mistralys/application-localization": "^2.0.0",
     "mistralys/mailcode": ">=3.5",
-    "php": ">=7.4"
+    "php": "^7.4|^8.0"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",
