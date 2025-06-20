@@ -51,9 +51,9 @@ function tryParsePrice(string $price, $localeNameOrInstance=null) : ?PriceMatch
 /**
  * Parses and returns a single price string.
  *
- * NOTE: Throws an exception if no price can be recognized.
- * See {@see tryParsePrice()} as an alternative if unsure
- * whether the string contains a valid price.
+ * > NOTE: Throws an exception if no price can be recognized.
+ * > See {@see tryParsePrice()} as an alternative if unsure
+ * > whether the string contains a valid price.
  *
  * @param string $price
  * @param string|BaseCurrencyLocale $localeNameOrInstance
