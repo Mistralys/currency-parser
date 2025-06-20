@@ -6,7 +6,7 @@ namespace Mistralys\CurrencyParser;
 
 use AppLocalize\Localization;
 use AppLocalize\Localization\Countries\CountryInterface;
-use AppLocalize\Localization_Exception;
+use AppLocalize\Localization\LocalizationException;
 use Mistralys\CurrencyParser\Formatter\ReusableLocaleFormatter;
 use Mistralys\Rygnarok\Newsletter\CharFilter\CurrencyParserException;
 
@@ -55,7 +55,7 @@ abstract class BaseCurrencyLocale
 
             $this->country = Localization::createCountries()->getByISO($iso);
         }
-        catch (Localization_Exception $e)
+        catch (LocalizationException $e)
         {
             throw new CurrencyParserException(
                 'Cannot create country for currency locale.',

@@ -6,7 +6,7 @@ namespace Mistralys\CurrencyParser;
 
 use AppLocalize\Localization;
 use AppLocalize\Localization\Countries\CountryInterface;
-use AppLocalize\Localization_Exception;
+use AppLocalize\Localization\LocalizationException;
 use AppUtils\FileHelper\FileInfo;
 use AppUtils\FileHelper_Exception;
 use Mistralys\CurrencyParser\Formatter\PriceFormatterException;
@@ -81,7 +81,7 @@ class PriceFilter
      * @return PriceFilter
      * @throws CurrencyParserException
      * @throws PriceFormatterException
-     * @throws Localization_Exception
+     * @throws LocalizationException
      */
     public static function createForCountries(...$countries) : PriceFilter
     {
