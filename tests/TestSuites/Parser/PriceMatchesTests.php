@@ -21,9 +21,12 @@ EOT;
             ->expectCurrency('USD')
             ->findPrices($subject);
 
+        $all = $prices->getAll();
+
         $this->assertTrue($prices->hasMatches());
-        $this->assertCount(3, $prices);
-        $this->assertArrayHasKey(0, $prices);
+        $this->assertNotEmpty($all);
+        $this->assertCount(3, $all);
+        $this->assertArrayHasKey(0, $all);
         $this->assertSame($subject, $prices->getSubject());
     }
 
