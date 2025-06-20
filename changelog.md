@@ -1,5 +1,7 @@
 ## v1.1.1 - Dependency Update
 - Localization: Bumped up AppLocalize to [v2.0.0](https://github.com/Mistralys/application-localization/releases/tag/2.0.0).
+- Composer: Allowing both PHP7 and PHP8.
+- PHP: Tested on PHP8.4.
 
 ## v1.1.0 - Mailcode and Localization update (Breaking-L)
 - Localization: Updated references to classes refactored in AppLocalize.
